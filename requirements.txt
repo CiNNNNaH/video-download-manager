@@ -1,0 +1,6 @@
+# Python package dependencies only.
+# External tools and runtime prerequisites are documented in README.md.
+
+PySide6>=6.8
+yt-dlp>=2026.3.17
+packaging>=24.0
