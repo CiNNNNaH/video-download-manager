@@ -3,12 +3,24 @@
 Video Download Manager (VDM) is a portable-first Windows desktop downloader built around `yt-dlp` with a PySide6 GUI.
 
 - **Product Version:** `VDM_v1.3.0`
-- **Current Delivery Package:** `1.8`
+- **Current Delivery Package:** `1.9`
+
+
+
+## Screenshots
+
+The screenshots below show the main application interface and a typical analyzed state before download.
+
+### Main UI
+![VDM Main UI](assets/screenshots/main-ui-idle.png)
+
+### Analyzed and Ready to Download
+![VDM Analyzed UI](assets/screenshots/main-ui-analyzed.png)
 
 ## Versioning model
 VDM uses two parallel identifiers:
 - **Product version**: the active product line, currently `VDM_v1.3.0`
-- **Package version**: delivery iterations inside the same product line, for example `1.0`, `1.1`, `1.2`, `1.3`, `1.4`, `1.5`, `1.6`, `1.7`, `1.8`
+- **Package version**: delivery iterations inside the same product line, for example `1.0`, `1.1`, `1.2`, `1.3`, `1.4`, `1.5`, `1.6`, `1.7`, `1.8`, `1.9`
 
 Integer package numbers are normalized in documentation as `.0` only when required by older history entries. The active `VDM_v1.3.0` line uses the simple `1.x` package sequence.
 
