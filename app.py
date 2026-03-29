@@ -12,6 +12,7 @@ from core.path_manager import PathManager
 from gui.main_window import MainWindow
 from services.history_service import HistoryService
 from services.log_service import LogService
+from services.i18n_service import I18nService
 from services.settings_service import SettingsService
 from services.theme_service import ThemeService
 
@@ -27,6 +28,7 @@ class VDMApplication:
         self.history = self.history_service.load()
 
         self.log_service = LogService(self.root / "log.txt", self.env_paths.logs_dir / "app.log")
+        self.i18n = I18nService(self.root / "locales", self.settings.language)
         self.log_service.start_session(self.settings, self.root, self.env_paths)
         self.theme_service = ThemeService()
         self.path_manager = PathManager(self.env_paths, self.settings)
@@ -54,6 +56,7 @@ class VDMApplication:
                 theme_service=self.theme_service,
                 settings_service=self.settings_service,
                 app=app,
+                i18n=self.i18n,
             )
             window.show()
 

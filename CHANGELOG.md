@@ -1,15 +1,8 @@
-## VDM_v1.2.0 / Package 1.0 - GitHub Release Prep
-- opened the `VDM_v1.2.0` product line from the stabilized `VDM_v1.1 / Package 19.0` baseline
-- aligned in-app version metadata and default settings to `VDM_v1.2.0`
-- added GitHub issue templates, pull-request template, and repository support files
-- kept UI, analyze/download behavior, packaging, and support-bundle flow unchanged
-
 # Changelog
 
-This file tracks user-facing product changes across VDM product lines. Historical v1.1 entries are preserved below the v1.2.0 baseline reset.
+This file tracks user-facing product changes within the **VDM_v1.1** product line.
 
-- `VDM_v1.2.0` starts from the stabilized `VDM_v1.1 / Package 19.0` baseline.
-- Package numbering restarts inside the new product line.
+- **Product version** stays at `VDM_v1.1` until a true product-level milestone justifies `v1.2`.
 - **Package numbers** are delivery iterations inside the same product line.
 - Integer package numbers are normalized in documentation as `.0` for readability and sorting.
 
@@ -158,10 +151,3 @@ This file tracks user-facing product changes across VDM product lines. Historica
 
 ### Package 1.0
 - foundation bootstrap, GUI skeleton, settings, and logging
-
-
-## VDM_v1.2.0 / Package 1.1 - GitHub Repo Cleanup
-- Removed individual package note files from the GitHub-facing repo.
-- Kept PACKAGE_HISTORY.md as the single package timeline reference.
-- Removed __pycache__ and compiled Python artifacts from the repository package.
-- Kept source, docs, scripts, tests, and GitHub templates only.

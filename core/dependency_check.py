@@ -34,21 +34,21 @@ class DependencyChecker:
         if name == "ffmpeg":
             if shutil.which("winget"):
                 return "winget install -e --id Gyan.FFmpeg"
-            return "Portable ffmpeg paketini tools/ffmpeg altina koy."
+            return "Place the portable ffmpeg package under tools/ffmpeg."
         return ""
 
     def _suggested_fix_for(self, name: str, status: str) -> str:
         if name == "yt-dlp":
             if status in {"outdated", "critical_outdated"}:
-                return "yt-dlp surumunu hemen guncelle. Eski surum site davranisini bozabilir."
-            return "Uygulama icinden guncelle veya python -m pip install -U yt-dlp calistir."
+                return "Update yt-dlp immediately. An old version can break site behavior."
+            return "Update from inside the app or run python -m pip install -U yt-dlp."
         if name == "deno":
-            return "Uygulama icinden yuklemeyi dene. Gerekirse winget veya resmi PowerShell kurulumunu kullan."
+            return "Try installation from inside the app. If needed, use winget or the official PowerShell install."
         if name == "ffmpeg":
-            return "Uygulama icinden kurulum dene veya tools/ffmpeg altina portable binary ekle."
+            return "Try installation from inside the app or add the portable binary under tools/ffmpeg."
         if status == "missing":
-            return "Bileseni kurup tekrar kontrol et."
-        return "Detayli logu incele."
+            return "Install the component and check again."
+        return "Check the detailed log."
 
     def _check_latest(self, name: str) -> tuple[str, str]:
         if not self.settings.check_online_updates_on_startup:
@@ -72,7 +72,7 @@ class DependencyChecker:
                 installed=False,
                 accessible=False,
                 status="missing",
-                message=f"{name} bulunamadi",
+                message=f"{name} not found",
                 install_action="install",
                 install_command=self._install_command_for(name),
                 source=source,
@@ -97,7 +97,7 @@ class DependencyChecker:
                     installed=True,
                     accessible=False,
                     status="error",
-                    message=f"{name} surum bilgisi okunamadi",
+                    message=f"{name} version could not be read",
                     resolved_path=resolved_path,
                     install_command=self._install_command_for(name),
                     source=source,
@@ -113,20 +113,20 @@ class DependencyChecker:
 
             if name == "ffmpeg" and not latest_version:
                 status = "ready"
-                message = "ffmpeg erisilebilir"
+                message = "ffmpeg accessible"
                 if self.settings.check_online_updates_on_startup:
-                    message += " (online son surum karsilastirmasi yok)"
+                    message += " (no online latest-version comparison)"
             else:
                 status = compare_state if compare_state in {"ready", "outdated", "critical_outdated"} else "ready"
-                message = f"{name} erisilebilir"
+                message = f"{name} accessible"
                 if status == "outdated":
-                    message = f"{name} guncel degil"
+                    message = f"{name} is outdated"
                 elif status == "critical_outdated":
-                    message = f"{name} kritik derecede eski"
+                    message = f"{name} is critically outdated"
                 elif latest_error and latest_error != "online version check disabled":
-                    message = f"{name} erisilebilir, online surum kontrolu yapilamadi"
+                    message = f"{name} accessible, online version check failed"
                 elif latest_error == "online version check disabled":
-                    message = f"{name} erisilebilir, online surum kontrolu kapali"
+                    message = f"{name} accessible, online version check disabled"
 
             details = self._resolution_detail(resolved_path, source, custom_path)
             if latest_error:
@@ -155,7 +155,7 @@ class DependencyChecker:
                 installed=True,
                 accessible=False,
                 status="error",
-                message=f"{name} kontrol hatasi",
+                message=f"{name} check error",
                 resolved_path=resolved_path,
                 install_command=self._install_command_for(name),
                 source=source,
@@ -181,12 +181,12 @@ class DependencyChecker:
                     installed=bool(binary),
                     accessible=bool(binary),
                     status="ready" if binary else "missing",
-                    message="Browser bulundu" if binary else "Browser bulunamadi",
+                    message="Browser found" if binary else "Browser not found",
                     resolved_path=binary or "",
                     source=source,
                     can_auto_fix=False,
                     details=f"resolved_path={binary or '-'} | source={source}",
-                    suggested_fix="Browser yoksaniz ilgili tarayiciyi kurun.",
+                    suggested_fix="Install the related browser if it is missing.",
                 )
             )
         return statuses

@@ -14,36 +14,46 @@ from PySide6.QtWidgets import (
 
 
 class SetupDialog(QDialog):
-    def __init__(self, statuses, parent=None):
+    def __init__(self, statuses, i18n, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Bagimlilik Kurulum Yardimcisi")
+        self.i18n = i18n
+        self.t = i18n.t
+        self.setWindowTitle(self.t("dialog.setup.title"))
         self.resize(920, 520)
         self.install_requested = False
         self.selected_names = []
 
         layout = QVBoxLayout(self)
-        layout.addWidget(QLabel("Eksik, erisilemeyen veya guncel olmayan bagimliliklar bulundu. Ozellikle yt-dlp kritik durumdaysa once onu duzeltin."))
+        layout.addWidget(QLabel(self.t("setup.header")))
 
         self.table = QTableWidget(0, 7)
         self.table.setHorizontalHeaderLabels(
-            ["Sec", "Bilesen", "Durum", "Yerel", "Son", "Kaynak", "Mesaj"]
+            [
+                self.t("setup.columns.select"),
+                self.t("setup.columns.component"),
+                self.t("setup.columns.status"),
+                self.t("setup.columns.local"),
+                self.t("setup.columns.latest"),
+                self.t("setup.columns.source"),
+                self.t("setup.columns.message"),
+            ]
         )
         self._fill_table(statuses)
         layout.addWidget(self.table)
 
-        self.path_checkbox = QCheckBox("Kurulumdan sonra gerekirse kullanici PATH ayarini guncellemeyi dene")
+        self.path_checkbox = QCheckBox(self.t("setup.path_update"))
         self.path_checkbox.setChecked(False)
         layout.addWidget(self.path_checkbox)
 
-        layout.addWidget(QLabel("Ayrinti / Oneri"))
+        layout.addWidget(QLabel(self.t("setup.details")))
         self.details_box = QTextEdit()
         self.details_box.setReadOnly(True)
         layout.addWidget(self.details_box)
 
         button_row = QHBoxLayout()
-        self.install_button = QPushButton("Secilenleri Kur / Guncelle")
-        self.continue_button = QPushButton("Sadece Uyar ve Devam Et")
-        self.cancel_button = QPushButton("Iptal")
+        self.install_button = QPushButton(self.t("setup.install_selected"))
+        self.continue_button = QPushButton(self.t("setup.warn_continue"))
+        self.cancel_button = QPushButton(self.t("common.cancel"))
 
         self.install_button.clicked.connect(self._request_install)
         self.continue_button.clicked.connect(self.accept)
@@ -75,7 +85,6 @@ class SetupDialog(QDialog):
             self.table.setItem(row, 5, QTableWidgetItem(status.source or "-"))
             self.table.setItem(row, 6, QTableWidgetItem(status.message))
 
-            # keep payload
             for col in range(7):
                 self.table.item(row, col).setData(32, status)
 
@@ -95,17 +104,17 @@ class SetupDialog(QDialog):
             return
 
         parts = [
-            f"Bilesen: {status.name}",
-            f"Durum: {status.status}",
-            f"Yerel surum: {status.local_version or '-'}",
-            f"Son surum: {status.latest_version or '-'}",
-            f"Kaynak: {status.source or '-'}",
-            f"Onerilen cozum: {status.suggested_fix or '-'}",
+            f"{self.t('setup.columns.component')}: {status.name}",
+            f"{self.t('setup.columns.status')}: {status.status}",
+            f"{self.t('setup.columns.local')}: {status.local_version or '-'}",
+            f"{self.t('setup.columns.latest')}: {status.latest_version or '-'}",
+            f"{self.t('setup.columns.source')}: {status.source or '-'}",
+            f"{self.t('setup.details')}: {status.suggested_fix or '-'}",
         ]
         if status.details:
-            parts.append(f"Detay: {status.details}")
+            parts.append(f"{self.t("setup.details_label")}: {status.details}")
         if status.install_command:
-            parts.append(f"Onerilen komut: {status.install_command}")
+            parts.append(f"{self.t("setup.command_label")}: {status.install_command}")
         self.details_box.setPlainText("\n".join(parts))
 
     def _request_install(self) -> None:
@@ -121,7 +130,7 @@ class SetupDialog(QDialog):
                     selected.append(status.name)
 
         if not selected:
-            QMessageBox.warning(self, "Secim Gerekiyor", "Kurulum icin en az bir bilesen secmelisin.")
+            QMessageBox.warning(self, self.t("setup.selection_required"), self.t("setup.selection_required_message"))
             return
 
         self.selected_names = selected

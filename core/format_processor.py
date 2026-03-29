@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+import math
+
 from models.format_item import FormatItem
 
 
 class FormatProcessor:
+    SIMPLE_TARGETS = [144, 240, 360, 480, 720, 1080, 1440, 2160]
+
     @staticmethod
     def _human_size(value) -> str:
         if not value:
@@ -91,6 +95,88 @@ class FormatProcessor:
             parts.append("m4a_dash")
         return ", ".join(dict.fromkeys(parts)) if parts else "-"
 
+    @staticmethod
+    def _resolution_height(item: FormatItem) -> int:
+        res = (item.resolution or "").lower()
+        if "x" in res:
+            try:
+                return int(res.split("x")[-1])
+            except ValueError:
+                return 0
+        if res.endswith("p"):
+            try:
+                return int(res[:-1])
+            except ValueError:
+                return 0
+        return 0
+
+    @staticmethod
+    def _bitrate_value(item: FormatItem) -> float:
+        raw = (item.tbr or "").strip().lower().replace("k", "")
+        try:
+            return float(raw)
+        except ValueError:
+            return 0.0
+
+    @staticmethod
+    def _is_storyboard(item: FormatItem) -> bool:
+        text = f"{item.more_info} {item.display_label}".lower()
+        return item.ext == "mhtml" or "storyboard" in text or item.media_type == "images"
+
+    @classmethod
+    def _rank_item(cls, item: FormatItem, prefer_ext: str | None = None) -> tuple:
+        return (
+            cls._is_storyboard(item) is False,
+            item.media_type == "muxed",
+            item.ext == prefer_ext if prefer_ext else False,
+            cls._resolution_height(item),
+            cls._bitrate_value(item),
+            item.fps not in {"", "-"},
+        )
+
+    @classmethod
+    def _normalize_simple_height(cls, item: FormatItem) -> int:
+        height = cls._resolution_height(item)
+        if height <= 0:
+            return 0
+        return min(cls.SIMPLE_TARGETS, key=lambda target: (abs(target - height), target))
+
+    @staticmethod
+    def _parse_size_bytes(value: float | int | None) -> int:
+        if value in (None, ""):
+            return 0
+        try:
+            return int(float(value))
+        except Exception:
+            return 0
+
+    @staticmethod
+    def _size_from_text(text: str) -> int:
+        raw = (text or "").strip().upper()
+        if not raw or raw == "-":
+            return 0
+        try:
+            number, unit = raw.split()[:2]
+            value = float(number)
+        except Exception:
+            return 0
+        scale = {"B": 1, "KB": 1024, "MB": 1024**2, "GB": 1024**3, "TB": 1024**4}
+        return int(value * scale.get(unit, 1))
+
+    @classmethod
+    def _sort_advanced_items(cls, items: list[FormatItem]) -> list[FormatItem]:
+        def key(item: FormatItem) -> tuple:
+            size_bytes = item.size_bytes or cls._size_from_text(item.size_text)
+            return (
+                cls._is_storyboard(item) is False,
+                size_bytes,
+                cls._resolution_height(item),
+                cls._bitrate_value(item),
+                item.media_type == "muxed",
+            )
+
+        return sorted(items, key=key, reverse=True)
+
     @classmethod
     def build_advanced_items(cls, formats: list[dict]) -> list[FormatItem]:
         items: list[FormatItem] = []
@@ -98,6 +184,7 @@ class FormatProcessor:
             format_id = str(fmt.get("format_id", "")).strip()
             if not format_id:
                 continue
+            size_bytes = cls._parse_size_bytes(fmt.get("filesize") or fmt.get("filesize_approx"))
             items.append(
                 FormatItem(
                     display_label=fmt.get("format") or format_id,
@@ -107,7 +194,8 @@ class FormatProcessor:
                     fps=str(fmt.get("fps", "") or "-"),
                     vcodec=fmt.get("vcodec", "-") or "-",
                     acodec=fmt.get("acodec", "-") or "-",
-                    size_text=cls._human_size(fmt.get("filesize") or fmt.get("filesize_approx")),
+                    size_text=cls._human_size(size_bytes),
+                    size_bytes=size_bytes,
                     tbr=cls._tbr(fmt),
                     proto=fmt.get("protocol", "-") or "-",
                     media_type=cls._media_type(fmt),
@@ -117,7 +205,7 @@ class FormatProcessor:
                     original_format_ids=format_id,
                 )
             )
-        return items
+        return cls._sort_advanced_items(items)
 
     @classmethod
     def build_simple_items(cls, advanced_items: list[FormatItem]) -> list[FormatItem]:
@@ -125,28 +213,15 @@ class FormatProcessor:
         if not advanced_items:
             return simple
 
-        muxed = [i for i in advanced_items if i.media_type == "muxed"]
-        audio = [i for i in advanced_items if i.media_type == "audio only"]
-        video = [i for i in advanced_items if i.media_type == "video only"]
+        usable_items = [item for item in advanced_items if not cls._is_storyboard(item)]
+        muxed = [i for i in usable_items if i.media_type == "muxed"]
+        audio = [i for i in usable_items if i.media_type == "audio only"]
+        video = [i for i in usable_items if i.media_type == "video only"]
 
         def pick_best(items: list[FormatItem], prefer_ext: str | None = None) -> FormatItem | None:
             if not items:
                 return None
-            def sort_key(item: FormatItem):
-                res = item.resolution
-                height = 0
-                if "x" in res:
-                    try:
-                        height = int(res.split("x")[-1])
-                    except ValueError:
-                        height = 0
-                elif res.endswith("p"):
-                    try:
-                        height = int(res[:-1])
-                    except ValueError:
-                        height = 0
-                return (item.ext == prefer_ext if prefer_ext else False, height, item.fps not in {"", "-"}, item.size_text)
-            return sorted(items, key=sort_key, reverse=True)[0]
+            return sorted(items, key=lambda item: cls._rank_item(item, prefer_ext), reverse=True)[0]
 
         def clone(item: FormatItem, label: str) -> FormatItem:
             return FormatItem(
@@ -158,6 +233,7 @@ class FormatProcessor:
                 vcodec=item.vcodec,
                 acodec=item.acodec,
                 size_text=item.size_text,
+                size_bytes=item.size_bytes,
                 tbr=item.tbr,
                 proto=item.proto,
                 media_type=item.media_type,
@@ -175,19 +251,18 @@ class FormatProcessor:
         if audio_best:
             simple.append(clone(audio_best, "Audio Only"))
 
-        seen_labels = {item.display_label for item in simple}
-        for target in [2160, 1440, 1080, 720, 480, 360]:
-            matched = None
-            for item in sorted(video + muxed, key=lambda x: x.resolution, reverse=True):
-                res = item.resolution.lower()
-                if f"x{target}" in res or res == f"{target}p":
-                    matched = item
-                    break
-            if matched:
-                label = f"{target}p {matched.ext.upper()}"
-                if label in seen_labels:
-                    continue
-                seen_labels.add(label)
-                simple.append(clone(matched, label))
+        combined = muxed + video
+        for target in cls.SIMPLE_TARGETS:
+            candidates = [item for item in combined if cls._normalize_simple_height(item) == target]
+            if not candidates:
+                continue
+            matched = pick_best(candidates, "mp4")
+            if not matched:
+                continue
+            media_tag = "" if matched.media_type == "muxed" else " Video Only"
+            label = f"{target}p{media_tag} ({matched.ext.upper()})"
+            if any(existing.display_label == label for existing in simple):
+                continue
+            simple.append(clone(matched, label))
 
         return simple

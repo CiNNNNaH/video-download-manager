@@ -11,6 +11,7 @@ class FormatItem:
     vcodec: str = ""
     acodec: str = ""
     size_text: str = ""
+    size_bytes: int = 0
     tbr: str = ""
     proto: str = ""
     media_type: str = ""

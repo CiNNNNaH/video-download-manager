@@ -31,6 +31,7 @@ from PySide6.QtWidgets import (
     QComboBox,
     QCheckBox,
     QAbstractItemView,
+    QFrame,
 )
 
 from core.downloader import DownloadRequest
@@ -108,6 +109,7 @@ class MainWindow(QMainWindow):
         theme_service,
         settings_service,
         app,
+        i18n,
     ):
         super().__init__()
         self.settings = settings
@@ -122,6 +124,8 @@ class MainWindow(QMainWindow):
         self.theme_service = theme_service
         self.settings_service = settings_service
         self.app = app
+        self.i18n = i18n
+        self.t = i18n.t
 
         self.current_result = None
         self.current_view_mode = self.settings.default_view_mode
@@ -137,7 +141,7 @@ class MainWindow(QMainWindow):
         self.format_columns = [
             "ID",
             "File Type",
-            "Secim",
+            "Choice",
             "Resolution",
             "Filesize",
             "TBR",
@@ -151,7 +155,7 @@ class MainWindow(QMainWindow):
 
         self.reencode_presets = {
             "mp4_h265_balanced": {
-                "label": "MP4 / H.265 (HEVC) / Dengeli",
+                "label": self.t("preset.h265_balanced"),
                 "video_codec": "hevc_nvenc",
                 "audio_codec": "aac",
                 "audio_bitrate": "160k",
@@ -160,7 +164,7 @@ class MainWindow(QMainWindow):
                 "ext": ".mp4",
             },
             "mp4_h265_quality": {
-                "label": "MP4 / H.265 (HEVC) / Kalite",
+                "label": self.t("preset.h265_quality"),
                 "video_codec": "hevc_nvenc",
                 "audio_codec": "aac",
                 "audio_bitrate": "192k",
@@ -169,7 +173,7 @@ class MainWindow(QMainWindow):
                 "ext": ".mp4",
             },
             "mp4_h264_compatible": {
-                "label": "MP4 / H.264 / Uyumlu",
+                "label": self.t("preset.h264_compatible"),
                 "video_codec": "h264_nvenc",
                 "audio_codec": "aac",
                 "audio_bitrate": "160k",
@@ -181,11 +185,11 @@ class MainWindow(QMainWindow):
 
         self.default_filename_template = "%(title)s.%(ext)s"
         self.filename_presets = [
-            ("Orijinal Title", self.default_filename_template),
-            ("Yukleyici - Title", "%(uploader)s - %(title)s.%(ext)s"),
-            ("Title - Resolution", "%(title)s - %(resolution)s.%(ext)s"),
-            ("Yukleyici - Title - Resolution", "%(uploader)s - %(title)s - %(resolution)s.%(ext)s"),
-            ("Title - Date", "%(title)s - %(upload_date)s.%(ext)s"),
+            (self.t("filename.original_title"), self.default_filename_template),
+            (self.t("filename.uploader_title"), "%(uploader)s - %(title)s.%(ext)s"),
+            (self.t("filename.title_resolution"), "%(title)s - %(resolution)s.%(ext)s"),
+            (self.t("filename.uploader_title_resolution"), "%(uploader)s - %(title)s - %(resolution)s.%(ext)s"),
+            (self.t("filename.title_date"), "%(title)s - %(upload_date)s.%(ext)s"),
         ]
 
         self.ui_signals = UiSignals()
@@ -217,12 +221,12 @@ class MainWindow(QMainWindow):
 
         top_row = QHBoxLayout()
         self.url_input = QLineEdit()
-        self.url_input.setPlaceholderText("yt-dlp destekli bir link gir veya yapistir...")
-        self.paste_button = QPushButton("Yapistir")
-        self.clear_button = QPushButton("Temizle")
-        self.analyze_button = QPushButton("Analiz Et")
-        self.open_browser_button = QPushButton("Tarayicida Ac")
-        self.settings_button = QPushButton("Ayarlar")
+        self.url_input.setPlaceholderText(self.t("main.url_placeholder"))
+        self.paste_button = QPushButton(self.t("main.paste"))
+        self.clear_button = QPushButton(self.t("main.clear"))
+        self.analyze_button = QPushButton(self.t("main.analyze"))
+        self.open_browser_button = QPushButton(self.t("main.open_in_browser"))
+        self.settings_button = QPushButton(self.t("main.settings"))
         top_row.addWidget(self.url_input, 1)
         top_row.addWidget(self.paste_button)
         top_row.addWidget(self.clear_button)
@@ -233,14 +237,14 @@ class MainWindow(QMainWindow):
 
         second_row = QHBoxLayout()
         self.url_history_combo = QComboBox()
-        self.url_history_combo.addItem("Son linkler")
+        self.url_history_combo.addItem(self.t("main.history_placeholder"))
         for item in self.history.get("recent_urls", []):
             self.url_history_combo.addItem(item)
         self.url_history_combo.currentTextChanged.connect(self._history_selected)
 
-        self.simple_view_button = QPushButton("Basit Gorunum")
-        self.advanced_view_button = QPushButton("Gelismis Gorunum")
-        self.fallback_checkbox = QCheckBox("Basarisizsa diger tarayicilari dene")
+        self.simple_view_button = QPushButton(self.t("main.simple_view"))
+        self.advanced_view_button = QPushButton(self.t("main.advanced_view"))
+        self.fallback_checkbox = QCheckBox(self.t("main.browser_fallback"))
         self.fallback_checkbox.setChecked(self.settings.fallback_browsers)
         second_row.addWidget(self.url_history_combo, 1)
         second_row.addWidget(self.simple_view_button)
@@ -250,27 +254,27 @@ class MainWindow(QMainWindow):
 
         mid_row = QHBoxLayout()
 
-        browser_box = QGroupBox("Browser")
+        browser_box = QGroupBox(self.t("main.browser_group"))
         browser_box.setMaximumWidth(280)
         browser_layout = QVBoxLayout(browser_box)
         self.browser_combo = QComboBox()
-        self.browser_combo.addItems(["chrome", "brave", "firefox", "edge", "cookies kapali"])
+        self.browser_combo.addItems(["chrome", "brave", "firefox", "edge", "cookies_disabled"])
         current_browser = self.settings.default_browser or self.history.get("last_browser", "chrome")
         self.browser_combo.setCurrentText(current_browser)
-        browser_layout.addWidget(QLabel("Cookie Kaynagi"))
+        browser_layout.addWidget(QLabel(self.t("main.cookie_source")))
         browser_layout.addWidget(self.browser_combo)
-        self.cookie_status_label = QLabel("Cookie durumu: bilinmiyor")
+        self.cookie_status_label = QLabel(self.t("main.cookies_unknown"))
         self.cookie_status_label.setWordWrap(True)
         browser_layout.addWidget(self.cookie_status_label)
 
-        status_box = QGroupBox("Sistem Durumu")
+        status_box = QGroupBox(self.t("main.system_status"))
         status_layout = QVBoxLayout(status_box)
         self.status_text = QTextEdit()
         self.status_text.setReadOnly(True)
         self.status_text.setMaximumHeight(120)
         button_row = QHBoxLayout()
-        self.refresh_deps_button = QPushButton("Kontrol Et")
-        self.refresh_updates_button = QPushButton("Guncellemeleri Kontrol Et")
+        self.refresh_deps_button = QPushButton(self.t("main.check_now"))
+        self.refresh_updates_button = QPushButton(self.t("main.check_updates"))
         self.refresh_deps_button.clicked.connect(lambda: self._run_startup_checks(startup=False))
         self.refresh_updates_button.clicked.connect(self._force_online_check)
         button_row.addWidget(self.refresh_deps_button)
@@ -283,17 +287,17 @@ class MainWindow(QMainWindow):
         root.addLayout(mid_row)
 
         info_row = QHBoxLayout()
-        info_box = QGroupBox("Icerik Bilgisi")
+        info_box = QGroupBox(self.t("main.content_info"))
         info_layout = QVBoxLayout(info_box)
         self.info_text = QTextEdit()
         self.info_text.setReadOnly(True)
         self.info_text.setMaximumHeight(125)
         info_layout.addWidget(self.info_text)
 
-        thumb_box = QGroupBox("Thumbnail")
+        thumb_box = QGroupBox(self.t("main.thumbnail"))
         thumb_box.setMaximumWidth(360)
         thumb_layout = QVBoxLayout(thumb_box)
-        self.thumbnail_label = QLabel("Onizleme yok")
+        self.thumbnail_label = QLabel(self.t("main.no_preview"))
         self.thumbnail_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.thumbnail_label.setMinimumSize(220, 124)
         self.thumbnail_label.setMaximumHeight(125)
@@ -302,6 +306,14 @@ class MainWindow(QMainWindow):
         info_row.addWidget(info_box, 1)
         info_row.addWidget(thumb_box, 0)
         root.addLayout(info_row)
+
+        self.media_table_panel = QFrame()
+        self.media_table_panel.setObjectName("mediaTablePanel")
+        self.media_table_panel.setFrameShape(QFrame.Shape.StyledPanel)
+        self.media_table_panel.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        media_table_layout = QVBoxLayout(self.media_table_panel)
+        media_table_layout.setContentsMargins(0, 0, 0, 0)
+        media_table_layout.setSpacing(0)
 
         self.format_table = QTableWidget(0, len(self.format_columns))
         self.format_table.setHorizontalHeaderLabels(self.format_columns)
@@ -313,27 +325,44 @@ class MainWindow(QMainWindow):
         header.setSectionsMovable(True)
         header.setStretchLastSection(False)
         self.format_table.setHorizontalScrollMode(QAbstractItemView.ScrollMode.ScrollPerPixel)
-        self.format_table.setMinimumHeight(240)
+        self.format_table.setMinimumHeight(210)
         self.format_table.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        root.addWidget(self.format_table, 7)
+        media_table_layout.addWidget(self.format_table, 1)
 
-        self.tech_summary = QLineEdit()
-        self.tech_summary.setReadOnly(True)
-        self.tech_summary.setPlaceholderText("Secili format ozeti burada gorunecek.")
-        self.tech_summary.setMinimumHeight(24)
-        self.tech_summary.setMaximumHeight(24)
+        root.addWidget(self.media_table_panel, 7)
+
+        self.selection_summary_panel = QFrame()
+        self.selection_summary_panel.setObjectName("selectionSummaryPanel")
+        self.selection_summary_panel.setFrameShape(QFrame.Shape.StyledPanel)
+        self.selection_summary_panel.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.selection_summary_panel.setFixedHeight(34)
+        summary_panel_layout = QHBoxLayout(self.selection_summary_panel)
+        summary_panel_layout.setContentsMargins(8, 4, 8, 4)
+        summary_panel_layout.setSpacing(8)
+        self.selection_summary_label = QLabel(f"{self.t('main.selected_format_group')}:" )
+        self.selection_summary_label.setObjectName("selectionSummaryCaption")
+        self.selection_summary_label.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.selection_summary_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
+        self.tech_summary = QLabel()
+        self.tech_summary.setObjectName("selectionSummaryValue")
+        self.tech_summary.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         self.tech_summary.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        self.tech_summary.setClearButtonEnabled(False)
-        self.tech_summary.setTextMargins(4, 0, 4, 0)
-        root.addWidget(self.tech_summary, 0)
+        self.tech_summary.setMinimumHeight(20)
+        self.tech_summary.setMaximumHeight(20)
+        self.tech_summary.setWordWrap(False)
+        self.tech_summary.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
+        self.tech_summary.setText(self.t("main.selected_format_summary"))
+        summary_panel_layout.addWidget(self.selection_summary_label, 0)
+        summary_panel_layout.addWidget(self.tech_summary, 1)
+        root.addWidget(self.selection_summary_panel, 0)
 
-        download_box = QGroupBox("Indirme Ayarlari")
+        download_box = QGroupBox(self.t("main.download_settings"))
         download_layout = QVBoxLayout(download_box)
 
         row1 = QHBoxLayout()
         self.download_dir_label = QLabel(self._current_download_dir())
-        self.download_dir_button = QPushButton("Klasor Sec")
-        row1.addWidget(QLabel("Cikti Klasoru:"))
+        self.download_dir_button = QPushButton(self.t("main.choose_folder"))
+        row1.addWidget(QLabel(self.t("main.output_folder")))
         row1.addWidget(self.download_dir_label, 1)
         row1.addWidget(self.download_dir_button)
         download_layout.addLayout(row1)
@@ -342,9 +371,9 @@ class MainWindow(QMainWindow):
         self.filename_preset_combo = QComboBox()
         for label, template in self.filename_presets:
             self.filename_preset_combo.addItem(label, template)
-        self.filename_preset_combo.addItem("Manuel", "__manual__")
+        self.filename_preset_combo.addItem(self.t("common.manual"), "__manual__")
         self.manual_filename_edit = QLineEdit()
-        self.manual_filename_edit.setPlaceholderText("Orijinal Title varsayilan. Manuel secerseniz burada kendi sablonunuzu yazin.")
+        self.manual_filename_edit.setPlaceholderText(self.t("main.filename_placeholder"))
         self.filename_preview_edit = QLineEdit()
         self.filename_preview_edit.setReadOnly(True)
 
@@ -356,38 +385,38 @@ class MainWindow(QMainWindow):
         self.target_container_combo.addItems(["auto", "mp4", "mkv", "keep original"])
         self.target_container_combo.setCurrentText(self.settings.target_container)
 
-        self.remux_checkbox = QCheckBox("Gerekirse remux uygula")
+        self.remux_checkbox = QCheckBox(self.t("main.remux_if_needed"))
         self.remux_checkbox.setChecked(self.settings.remux_enabled)
 
-        row2.addWidget(QLabel("Medya Modu"))
+        row2.addWidget(QLabel(self.t("main.media_mode")))
         row2.addWidget(self.media_mode_combo)
-        row2.addWidget(QLabel("Container"))
+        row2.addWidget(QLabel(self.t("main.container")))
         row2.addWidget(self.target_container_combo)
         row2.addWidget(self.remux_checkbox)
         download_layout.addLayout(row2)
 
         row3 = QHBoxLayout()
-        row3.addWidget(QLabel("Dosya Adi Bicimi"))
+        row3.addWidget(QLabel(self.t("main.filename_pattern")))
         row3.addWidget(self.filename_preset_combo, 1)
         row3.addWidget(self.manual_filename_edit, 2)
         download_layout.addLayout(row3)
 
         row3b = QHBoxLayout()
-        row3b.addWidget(QLabel("Sonuc Dosya Adi"))
+        row3b.addWidget(QLabel(self.t("main.result_filename")))
         row3b.addWidget(self.filename_preview_edit, 1)
         download_layout.addLayout(row3b)
 
         row4 = QHBoxLayout()
-        self.download_button = QPushButton("Indir")
-        self.stop_button = QPushButton("Durdur")
-        self.open_folder_button = QPushButton("Klasoru Ac")
-        self.open_file_button = QPushButton("Dosyayi Ac")
+        self.download_button = QPushButton(self.t("main.download"))
+        self.stop_button = QPushButton(self.t("main.stop"))
+        self.open_folder_button = QPushButton(self.t("main.open_folder"))
+        self.open_file_button = QPushButton(self.t("main.open_file"))
         self.reencode_preset_combo = QComboBox()
         for preset_key, preset_data in self.reencode_presets.items():
             self.reencode_preset_combo.addItem(preset_data["label"], preset_key)
         preset_index = self.reencode_preset_combo.findData(self.settings.default_reencode_preset)
         self.reencode_preset_combo.setCurrentIndex(preset_index if preset_index >= 0 else 0)
-        self.reencode_button = QPushButton("FFmpeg ile Re-encode Et")
+        self.reencode_button = QPushButton(self.t("main.reencode_button"))
         self.download_button.setEnabled(False)
         self.stop_button.setEnabled(False)
         self.open_file_button.setEnabled(False)
@@ -408,7 +437,7 @@ class MainWindow(QMainWindow):
         self.progress_bar.setValue(0)
         root.addWidget(self.progress_bar)
 
-        self.progress_details = QLabel("%0 | Hiz: - | Kalan: - | Boyut: - / - | Asama: hazir")
+        self.progress_details = QLabel(self.t("main.ready_progress"))
         root.addWidget(self.progress_details)
 
         self.log_output = QTextEdit()
@@ -425,7 +454,7 @@ class MainWindow(QMainWindow):
         root.setStretch(7, 0)
         root.setStretch(8, 0)
         root.setStretch(9, 0)
-        self.statusBar().showMessage("Hazir")
+        self.statusBar().showMessage(self.t("main.ready"))
 
         self.download_dir_button.clicked.connect(self._select_download_dir)
         self.settings_button.clicked.connect(self._open_settings)
@@ -600,7 +629,7 @@ class MainWindow(QMainWindow):
         return [
             "ID",
             "File Type",
-            "Secim",
+            "Choice",
             "Resolution",
             "Filesize",
             "TBR",
@@ -675,7 +704,7 @@ class MainWindow(QMainWindow):
         if value.startswith("http://") or value.startswith("https://"):
             previous = self._last_logged_url or "-"
             self._last_logged_url = value
-            self.log_service.info(f"URL guncellendi | onceki={previous} | yeni={value}")
+            self.log_service.info(f"URL updated | previous={previous} | current={value}")
             self.log_service.trace("url_input.changed", previous=previous, new=value)
 
     def _summarize_dependency_issues(self, statuses) -> str:
@@ -683,20 +712,20 @@ class MainWindow(QMainWindow):
         critical = [item.name for item in managed if item.status in {"missing", "critical_outdated", "error"}]
         warnings = [item.name for item in managed if item.status == "outdated"]
         if critical:
-            return f"Kritik bagimlilik sorunu: {', '.join(critical)}"
+            return f"Critical dependency issue: {', ' .join(critical)}"
         if warnings:
-            return f"Guncel olmayan bagimlilik: {', '.join(warnings)}"
-        return "Bagimliliklar hazir"
+            return f"Outdated dependency: {', ' .join(warnings)}"
+        return self.t("status.dependencies_ready")
 
     def _update_cookie_mode_hint(self, *_args) -> None:
         selected = self.browser_combo.currentText()
         fallback = self.fallback_checkbox.isChecked()
-        if selected == "cookies kapali":
-            hint = "Cookie durumu: browser cookies kapali. Sadece public/korumasiz akislar icin uygundur."
+        if selected == "cookies_disabled":
+            hint = self.t("main.cookies_disabled_status")
         elif fallback:
-            hint = f"Cookie durumu: once {selected}, sonra fallback tarayicilar denenebilir."
+            hint = self.t("main.cookie_status_fallback_hint", browser=selected)
         else:
-            hint = f"Cookie durumu: secili kaynak {selected}. Gerekiyorsa fallback acin."
+            hint = self.t("main.cookie_status_selected_hint", browser=selected)
         self.cookie_status_label.setText(hint)
 
     def _render_statuses(self, statuses, log_to_ui: bool = False, prefix: str = "") -> None:
@@ -712,31 +741,31 @@ class MainWindow(QMainWindow):
                 self.log_service.debug(f"{item.name} details: {item.details}")
         summary = self._summarize_dependency_issues(statuses)
         self.status_text.append("")
-        self.status_text.append(f"Ozet: {summary}")
+        self.status_text.append(self.t("main.log_dependency_summary", summary=summary))
         self.log_service.info(f"Dependency summary | {summary}")
         if log_to_ui and rendered_lines:
             if prefix:
                 self._append_log(prefix)
             self._append_log("; ".join(rendered_lines))
-            self._append_log(f"Ozet: {summary}")
+            self._append_log(self.t("main.log_dependency_summary", summary=summary))
         self._trace("render_statuses.exit", count=len(rendered_lines), summary=summary)
 
     def _run_startup_checks(self, startup: bool = False):
         self._trace("startup_checks.enter", startup=startup)
         if startup and not self.settings.startup_dependency_check:
-            self.statusBar().showMessage("Acilis bagimlilik kontrolu ayarlardan kapali")
-            self._append_log("Acilis bagimlilik kontrolu atlandi")
+            self.statusBar().showMessage(self.t("main.startup_check_disabled"))
+            self._append_log(self.t("main.startup_check_skipped"))
             self._trace("startup_checks.skip", startup=startup)
             return
 
         statuses = self.bootstrap_manager.scan()
-        self._render_statuses(statuses, log_to_ui=not startup, prefix="Bagimlilik kontrolu yenilendi")
+        self._render_statuses(statuses, log_to_ui=not startup, prefix=self.t("main.dependency_check_refreshed"))
 
         issues = self.bootstrap_manager.missing_or_outdated(statuses)
         summary = self._summarize_dependency_issues(statuses)
         self._trace("startup_checks.scan.complete", startup=startup, issues=len(issues), summary=summary)
         if issues and self.settings.auto_prompt_missing_dependencies:
-            dlg = SetupDialog(issues, self)
+            dlg = SetupDialog(issues, self.i18n, self)
             if dlg.exec() and dlg.install_requested:
                 selected = [item for item in issues if item.name in dlg.selected_names]
                 if dlg.path_checkbox.isChecked():
@@ -748,7 +777,7 @@ class MainWindow(QMainWindow):
                     path_state = result.get('path_state') or ('ok' if result['path_ok'] else 'failed')
                     resolved_path = result.get('resolved_path') or '-'
                     msg = (
-                        f"{result['name']}: {'basarili' if result['ok'] else 'basarisiz'} | "
+                        f"{result['name']}: {'ok' if result['ok'] else 'failed'} | "
                         f"verify={result['verified_status']} | version={result['verified_version'] or '-'} | "
                         f"path={path_state} | resolved_path={resolved_path} | "
                         f"verify_message={result['verified_message'] or '-'}"
@@ -759,9 +788,9 @@ class MainWindow(QMainWindow):
                         self.log_service.debug(f"{result['name']} install output: {result['output']}")
                     if result["path_output"]:
                         self.log_service.debug(f"{result['name']} path output: {result['path_output']}")
-                self.statusBar().showMessage("Kurulum/guncelleme islemi tamamlandi")
+                self.statusBar().showMessage(self.t("main.install_update_completed"))
                 statuses = self.bootstrap_manager.scan()
-                self._render_statuses(statuses, log_to_ui=True, prefix="Kurulum/guncelleme sonrasi durum")
+                self._render_statuses(statuses, log_to_ui=True, prefix=self.t("main.post_install_status"))
                 self.statusBar().showMessage(self._summarize_dependency_issues(statuses))
                 self._trace("startup_checks.install.complete", selected=[item.name for item in selected])
                 return
@@ -775,16 +804,16 @@ class MainWindow(QMainWindow):
         try:
             self.settings.check_online_updates_on_startup = True
             statuses = self.bootstrap_manager.scan()
-            self._render_statuses(statuses, log_to_ui=True, prefix="Online guncellik kontrolu tamamlandi")
+            self._render_statuses(statuses, log_to_ui=True, prefix=self.t("main.online_update_check_completed"))
             summary = ", ".join(f"{item.name}={item.latest_version or '-'}" for item in statuses[:3])
-            self.statusBar().showMessage(f"Online guncellik kontrolu tamamlandi | {summary}")
+            self.statusBar().showMessage(f"{self.t("main.online_update_check_completed")} | {summary}")
         finally:
             self.settings.check_online_updates_on_startup = original
             self._trace("force_online_check.exit")
 
     def _open_settings(self):
         self._trace("open_settings.enter")
-        dlg = SettingsDialog(self.settings, self)
+        dlg = SettingsDialog(self.settings, self.i18n, self)
         if dlg.exec():
             dlg.apply_to_settings()
             self.settings.fallback_browsers = self.fallback_checkbox.isChecked()
@@ -800,29 +829,29 @@ class MainWindow(QMainWindow):
             self.remux_checkbox.setChecked(self.settings.remux_enabled)
             self.download_dir_label.setText(self._current_download_dir())
             self.log_service.info(
-                f"Ayarlar guncellendi | tema={self.settings.theme} | browser={self.settings.default_browser} | media_mode={self.settings.default_media_mode} | container={self.settings.target_container}"
+                f"Settings updated | theme={self.settings.theme} | browser={self.settings.default_browser} | media_mode={self.settings.default_media_mode} | container={self.settings.target_container}"
             )
-            self.statusBar().showMessage(f"Ayarlar guncellendi | tema={self.settings.theme}")
+            self.statusBar().showMessage(self.t("main.settings_updated", theme=self.settings.theme))
         self._trace("open_settings.exit")
 
     def _select_download_dir(self):
         self._trace("select_download_dir.enter")
-        folder = QFileDialog.getExistingDirectory(self, "Indirme Klasoru Sec", self._current_download_dir())
+        folder = QFileDialog.getExistingDirectory(self, self.t("main.choose_download_folder"), self._current_download_dir())
         if folder:
             self.settings.default_download_dir = folder
             self.history["last_download_dir"] = folder
             self.settings_service.save(self.settings)
             self.history_service.save(self.history)
             self.download_dir_label.setText(folder)
-            self.log_service.info(f"Indirme klasoru guncellendi: {folder}")
-            self.statusBar().showMessage(f"Klasor secildi: {folder}")
+            self.log_service.info(f"Download folder updated: {folder}")
+            self.statusBar().showMessage(self.t("main.folder_selected", folder=folder))
         self._trace("select_download_dir.exit", selected=bool(folder), folder=folder or "")
 
     def _reset_analysis_views(self, reason: str) -> None:
         self._trace("reset_analysis_views.enter", reason=reason)
         self.info_text.clear()
         self.thumbnail_label.clear()
-        self.thumbnail_label.setText("Onizleme yok")
+        self.thumbnail_label.setText(self.t("main.no_preview"))
         self.format_table.setRowCount(0)
         self.tech_summary.clear()
         self.download_button.setEnabled(False)
@@ -832,27 +861,27 @@ class MainWindow(QMainWindow):
         self.open_file_button.setEnabled(False)
         self.reencode_button.setEnabled(False)
         self.progress_bar.setValue(0)
-        self.progress_details.setText("%0 | Hiz: - | Kalan: - | Boyut: - / - | Asama: hazir")
-        self.log_service.info(f"Analiz gorunumleri sifirlandi | reason={reason}")
+        self.progress_details.setText(self.t("main.ready_progress"))
+        self.log_service.info(f"Analysis views reset | reason={reason}")
         self._update_filename_preview()
         self._trace("reset_analysis_views.exit", reason=reason)
 
     def _clear_form(self):
         self._trace("clear_form.enter", analysis_active=self.analysis_active, download_active=self.downloader.is_active)
         if self.downloader.is_active:
-            self.show_error("Aktif indirme varken form temizlenemez.")
+            self.show_error(self.t("main.clear_blocked"))
             return
         if self.analysis_active:
             self.pending_analysis_request = None
             self.url_input.clear()
-            self.statusBar().showMessage("Aktif analiz bitene kadar yeni URL bekleniyor")
-            self.log_service.info("Form temizleme istendi | aktif analiz nedeniyle sadece URL alani temizlendi")
+            self.statusBar().showMessage(self.t("main.clear_waiting_for_analysis"))
+            self.log_service.info("Clear form requested | only the URL field was cleared because an analysis is active")
             self._trace("clear_form.defer", analysis_active=True)
             return
         self.url_input.clear()
         self._reset_analysis_views("clear_form")
-        self.log_service.info("Form temizlendi")
-        self.statusBar().showMessage("Form temizlendi")
+        self.log_service.info("Form cleared")
+        self.statusBar().showMessage(self.t("main.form_cleared"))
         self._trace("clear_form.exit")
 
     def _paste_url(self):
@@ -863,9 +892,9 @@ class MainWindow(QMainWindow):
 
     def _queue_pending_analysis(self, url: str, browser: str, fallback: bool) -> None:
         self.pending_analysis_request = {"url": url, "browser": browser, "fallback": fallback}
-        self._append_log(f"Yeni analiz kuyruga alindi: {url}")
-        self.log_service.info(f"Yeni analiz kuyruga alindi | url={url} | browser={browser} | fallback={fallback}")
-        self.statusBar().showMessage("Aktif analiz bittiginde yeni URL otomatik analiz edilecek")
+        self._append_log(self.t("main.analysis_queued", url=url))
+        self.log_service.info(f"Analysis queued | url={url} | browser={browser} | fallback={fallback}")
+        self.statusBar().showMessage(self.t("main.analysis_queue_notice"))
         self._trace("analyze_url.queued", url=url, browser=browser, fallback=fallback)
 
     def _start_analysis_request(self, url: str, selected_browser: str, fallback: bool) -> None:
@@ -874,16 +903,16 @@ class MainWindow(QMainWindow):
         self.settings_service.save(self.settings)
         self._reset_filename_controls(persist=False)
         site_family = UrlUtils.detect_site_family(url)
-        self._append_log(f"Analiz ayarlari | browser={selected_browser} | fallback={fallback} | site_family={site_family}")
-        self.log_service.info(f"Analiz istegi alindi | url={url} | browser={selected_browser} | fallback={fallback}")
+        self._append_log(f"Analysis settings | browser={selected_browser} | fallback={fallback} | site_family={site_family}")
+        self.log_service.info(f"Analysis request received | url={url} | browser={selected_browser} | fallback={fallback}")
 
         self._reset_analysis_views("pre_analyze_reset")
         self._set_analysis_ui_state(True)
-        self.statusBar().showMessage("Link analiz ediliyor...")
+        self.statusBar().showMessage(self.t("main.link_analyzing"))
         self.progress_bar.setValue(15)
-        self.progress_details.setText("%15 | Hiz: - | Kalan: - | Boyut: - / - | Asama: analiz basladi")
-        self._append_log(f"Analiz basladi: {url} | site_family={site_family}")
-        self.cookie_status_label.setText(f"Cookie durumu: analiz suruyor ({selected_browser})")
+        self.progress_details.setText(self.t("main.analyzing_progress"))
+        self._append_log(f"Analysis started: {url} | site_family={site_family}")
+        self.cookie_status_label.setText(self.t("main.cookie_status_analysis_running", browser=selected_browser))
 
         self.analysis_thread = QThread(self)
         self.analysis_worker = AnalyzeWorker(
@@ -911,10 +940,10 @@ class MainWindow(QMainWindow):
             current_url=url,
         )
         if self.downloader.is_active:
-            self.show_error("Aktif indirme varken yeni analiz baslatma.")
+            self.show_error(self.t("main.analyze_blocked"))
             return
         if not url:
-            self.show_error("Once bir link gir.")
+            self.show_error(self.t("main.enter_link_first"))
             return
 
         selected_browser = self.browser_combo.currentText()
@@ -926,7 +955,7 @@ class MainWindow(QMainWindow):
         self._start_analysis_request(url, selected_browser, fallback)
 
     def _history_selected(self, text: str):
-        if text and text != "Son linkler":
+        if text and text != self.t("main.history_placeholder"):
             self.url_input.setText(text)
             self._trace("history_selected", value=text)
 
@@ -934,24 +963,24 @@ class MainWindow(QMainWindow):
         url = self.url_input.text().strip()
         self._trace("open_in_selected_browser.enter", url=url, browser=self.browser_combo.currentText())
         if not url:
-            self.show_error("Once bir link gir.")
+            self.show_error(self.t("main.enter_link_first"))
             return
 
         selected = self.browser_combo.currentText()
-        if selected == "cookies kapali":
-            self.show_error("Cookies kapali modunda tarayici secimi kullanilamaz.")
+        if selected == "cookies_disabled":
+            self.show_error(self.t("main.browser_selection_unavailable"))
             return
         binary_path, _ = self.path_manager.resolve_browser_binary(selected)
         if not binary_path:
-            self.show_error(f"Secilen tarayici bulunamadi: {selected}")
+            self.show_error(self.t("main.browser_not_found", browser=selected))
             return
         try:
             subprocess.Popen([binary_path, url])
-            self.log_service.info(f"Tarayicida acildi | browser={selected} | binary={binary_path} | url={url}")
+            self.log_service.info(f"Opened in browser | browser={selected} | binary={binary_path} | url={url}")
             self.statusBar().showMessage(f"Link {selected} ile acildi")
         except Exception as exc:
-            self.log_service.error(f"Tarayici acma hatasi | browser={selected} | error={exc}")
-            self.show_error(f"Tarayici acma hatasi: {exc}")
+            self.log_service.error(f"Browser open error | browser={selected} | error={exc}")
+            self.show_error(self.t("main.browser_open_error", error=exc))
         self._trace("open_in_selected_browser.exit", browser=selected)
 
     def _cleanup_analysis_thread(self):
@@ -969,7 +998,7 @@ class MainWindow(QMainWindow):
         self.pending_analysis_request = None
         self._trace("analysis_thread.cleanup.exit", has_pending=bool(pending))
         if pending:
-            self._append_log(f"Kuyruktaki analiz baslatiliyor: {pending['url']}")
+            self._append_log(self.t("main.analysis_queue_starting", url=pending["url"]))
             self._start_analysis_request(pending["url"], pending["browser"], pending["fallback"])
 
     def _on_analyze_finished(self, payload):
@@ -985,12 +1014,12 @@ class MainWindow(QMainWindow):
             self.format_table.setRowCount(0)
             self.tech_summary.clear()
             self.tech_summary.setToolTip("")
-            self.cookie_status_label.setText("Cookie durumu: analiz basarisiz")
-            self._append_log(f"Analiz hatasi: {result.technical_details or result.message}")
+            self.cookie_status_label.setText(self.t("main.analysis_failed_cookie_status"))
+            self._append_log(f"Analysis error: {result.technical_details or result.message}")
             self.show_error(f"{result.message}\n\n{result.technical_details}")
-            self.log_service.error(f"Analiz basarisiz | url={url} | detail={result.technical_details or result.message}")
-            self.statusBar().showMessage("Analiz basarisiz")
-            self.progress_details.setText("%0 | Hiz: - | Kalan: - | Boyut: - / - | Asama: analiz hatasi")
+            self.log_service.error(f"Analysis failed | url={url} | detail={result.technical_details or result.message}")
+            self.statusBar().showMessage(self.t("main.analysis_failed"))
+            self.progress_details.setText(self.t("main.analysis_error_progress"))
             self._update_filename_preview()
             self._trace("analyze_finished.fail", url=url)
             return
@@ -1006,53 +1035,53 @@ class MainWindow(QMainWindow):
         self.history_service.save(self.history)
         self._refresh_history_combo()
 
-        self.cookie_status_label.setText(f"Cookie durumu: kullanilan kaynak {result.used_browser}")
+        self.cookie_status_label.setText(self.t("main.cookie_status_used_source", browser=result.used_browser))
         self._render_content_info(result)
         self._render_format_table(result)
         self._update_filename_preview()
         self.progress_bar.setValue(100)
-        self.progress_details.setText("%100 | Hiz: - | Kalan: 00:00 | Boyut: - / - | Asama: analiz tamamlandi")
+        self.progress_details.setText(self.t("main.analysis_done_progress"))
         self.download_button.setEnabled(bool(self.current_formats))
         self._update_filename_preview()
         self._append_log(result.message)
         self.log_service.info(
-            f"Analiz tamamlandi | url={url} | site={result.content.site or '-'} | extractor={result.content.extractor or '-'} | formats={len(self.current_formats)} | used_browser={result.used_browser}"
+            f"Analysis completed | url={url} | site={result.content.site or '-'} | extractor={result.content.extractor or '-'} | formats={len(self.current_formats)} | used_browser={result.used_browser}"
         )
         if selected_browser != result.used_browser:
-            fallback_message = f"Fallback kullanildi: {selected_browser} yerine {result.used_browser}"
-            self.cookie_status_label.setText(f"Cookie durumu: once {selected_browser}, sonra {result.used_browser}")
+            fallback_message = self.t("main.fallback_used", selected=selected_browser, used=result.used_browser)
+            self.cookie_status_label.setText(self.t("main.cookie_status_switched", selected=selected_browser, used=result.used_browser))
             self._append_log(fallback_message)
             self.log_service.info(f"Browser fallback success | requested={selected_browser} | used={result.used_browser}")
             self.statusBar().showMessage(fallback_message)
         else:
-            self.statusBar().showMessage("Analiz tamamlandi")
+            self.statusBar().showMessage(self.t("main.analysis_completed"))
         self._trace("analyze_finished.success", url=url, format_count=len(self.current_formats))
 
     def _on_analyze_crashed(self, detail: str):
         url = self.url_input.text().strip()
         self.progress_bar.setValue(0)
-        self.progress_details.setText("%0 | Hiz: - | Kalan: - | Boyut: - / - | Asama: analiz crash")
-        self.cookie_status_label.setText("Cookie durumu: analiz crash")
-        message = "Analiz is parcacigi beklenmeyen sekilde sonlandi. Detayli logu kontrol edin."
+        self.progress_details.setText(self.t("main.analysis_crash_progress"))
+        self.cookie_status_label.setText(self.t("main.analysis_crash_cookie_status"))
+        message = "The analysis worker ended unexpectedly. Check the detailed log."
         self._append_log(message)
-        self.log_service.error(f"Analiz crash | url={url} | detail={detail.replace(chr(10), ' | ')}")
+        self.log_service.error(f"Analysis crash | url={url} | detail={detail.replace(chr(10), ' | ')}")
         self.show_error(message)
-        self.statusBar().showMessage("Analiz crash")
+        self.statusBar().showMessage(self.t("main.analysis_crash"))
         self._trace("analyze_crashed", url=url)
 
     def _render_content_info(self, result):
         content = result.content
         self._trace("render_content_info.enter", title=content.title or "", playlist=content.is_playlist)
         lines = [
-            f"Baslik: {content.title or '-'}",
-            f"Site: {content.site or '-'}",
-            f"Extractor: {content.extractor or '-'}",
-            f"Yukleyen: {content.uploader or '-'}",
-            f"Sure: {content.duration_text or '-'}",
-            f"Icerik tipi: {content.content_type or '-'}",
-            f"Playlist: {'evet' if content.is_playlist else 'hayir'}",
-            f"Playlist adet: {content.playlist_count if content.is_playlist else '-'}",
-            f"URL: {content.webpage_url or content.url}",
+            self.t("main.content_title", value=content.title or "-"),
+            self.t("main.content_site", value=content.site or "-"),
+            self.t("main.content_extractor", value=content.extractor or "-"),
+            self.t("main.uploaded_by", name=content.uploader or "-"),
+            self.t("main.content_duration", value=content.duration_text or "-"),
+            self.t("main.content_type", value=content.content_type or "-"),
+            self.t("main.content_playlist", value=self.t("common.yes") if content.is_playlist else self.t("common.no")),
+            self.t("main.content_playlist_count", value=content.playlist_count if content.is_playlist else "-"),
+            self.t("main.content_url", value=content.webpage_url or content.url),
         ]
         self.info_text.setPlainText("\n".join(lines))
         self._load_thumbnail(content.thumbnail_url)
@@ -1061,7 +1090,7 @@ class MainWindow(QMainWindow):
     def _load_thumbnail(self, url: str):
         self._trace("load_thumbnail.enter", has_url=bool(url))
         if not url:
-            self.thumbnail_label.setText("Onizleme yok")
+            self.thumbnail_label.setText(self.t("main.no_preview"))
             self._trace("load_thumbnail.skip")
             return
         try:
@@ -1074,25 +1103,31 @@ class MainWindow(QMainWindow):
                 self._trace("load_thumbnail.success")
                 return
         except Exception as exc:
-            self.log_service.debug(f"Thumbnail yuklenemedi: {exc}")
+            self.log_service.debug(self.t("main.thumbnail_load_failed_log", error=exc))
             self._trace("load_thumbnail.error", error=str(exc))
-        self.thumbnail_label.setText("Thumbnail yuklenemedi")
+        self.thumbnail_label.setText(self.t("main.thumbnail_load_failed"))
 
     def _switch_view_mode(self, mode: str):
         self.current_view_mode = mode
         self.settings.default_view_mode = mode
         self.settings_service.save(self.settings)
+        self.simple_view_button.setEnabled(mode != "simple")
+        self.advanced_view_button.setEnabled(mode != "advanced")
         self._trace("switch_view_mode", mode=mode, has_result=bool(self.current_result))
         if self.current_result:
             self._render_format_table(self.current_result)
 
     def _render_format_table(self, result):
-        self._trace("render_format_table.enter", mode=self.current_view_mode)
+        simple_count = len(result.simple_formats or [])
+        advanced_count = len(result.advanced_formats or [])
+        self._trace("render_format_table.enter", mode=self.current_view_mode, simple_count=simple_count, advanced_count=advanced_count)
         if self.current_view_mode == "advanced":
             self.current_formats = result.advanced_formats or []
         else:
             self.current_formats = result.simple_formats or result.advanced_formats or []
 
+        self.format_table.clearSelection()
+        self.format_table.setCurrentCell(-1, -1)
         self.format_table.setRowCount(len(self.current_formats))
         for row, item in enumerate(self.current_formats):
             values = [
@@ -1111,9 +1146,9 @@ class MainWindow(QMainWindow):
             ]
             for col, value in enumerate(values):
                 self.format_table.setItem(row, col, QTableWidgetItem(str(value)))
-        self.tech_summary.setText(f"Toplam format gorunumu: {len(self.current_formats)}")
         if self.current_formats:
-            self.format_table.selectRow(0)
+            selected_row = self._preferred_selected_row()
+            self.format_table.selectRow(selected_row)
             self._update_format_summary()
         else:
             self._update_filename_preview()
@@ -1126,18 +1161,36 @@ class MainWindow(QMainWindow):
             return None
         return self.current_formats[row]
 
+    def _preferred_selected_row(self) -> int:
+        for index, item in enumerate(self.current_formats):
+            more_info = (item.more_info or "").lower()
+            label = (item.display_label or "").lower()
+            if item.ext == "mhtml" or "storyboard" in more_info or label.startswith("sb") or "storyboard" in label:
+                continue
+            if item.media_type == "muxed":
+                return index
+        for index, item in enumerate(self.current_formats):
+            more_info = (item.more_info or "").lower()
+            label = (item.display_label or "").lower()
+            if item.ext == "mhtml" or "storyboard" in more_info or label.startswith("sb") or "storyboard" in label:
+                continue
+            if item.media_type in {"video only", "audio only"}:
+                return index
+        return 0
+
     def _update_format_summary(self):
         item = self._selected_format_item()
         if not item:
+            self.tech_summary.setText(self.t("main.total_formats_visible", count=len(self.current_formats)))
+            self.tech_summary.setToolTip(self.tech_summary.text())
             self._update_filename_preview()
             return
         summary = (
-            f"Secili: {item.display_label} | id={item.format_id} | type={item.media_type} | "
+            f"{self.t('main.selected', text=item.display_label)} | id={item.format_id} | type={item.media_type} | "
             f"res={item.resolution} | size={item.size_text} | ext={item.ext} | "
             f"v={item.vcodec} | a={item.acodec} | fps={item.fps} | proto={item.proto}"
         )
         self.tech_summary.setText(summary)
-        self.tech_summary.setCursorPosition(0)
         self.tech_summary.setToolTip(summary)
         self._update_filename_preview()
         self._trace("update_format_summary", format_id=item.format_id)
@@ -1146,7 +1199,7 @@ class MainWindow(QMainWindow):
         current = self.url_input.text().strip()
         self.url_history_combo.blockSignals(True)
         self.url_history_combo.clear()
-        self.url_history_combo.addItem("Son linkler")
+        self.url_history_combo.addItem(self.t("main.history_placeholder"))
         for item in self.history.get("recent_urls", []):
             self.url_history_combo.addItem(item)
         index = self.url_history_combo.findText(current)
@@ -1160,17 +1213,17 @@ class MainWindow(QMainWindow):
     def _start_download(self):
         self._trace("start_download.enter", analysis_active=self.analysis_active, download_active=self.downloader.is_active)
         if self.analysis_active:
-            self.show_error("Aktif analiz tamamlanmadan indirme baslatilamaz.")
+            self.show_error(self.t("main.analysis_incomplete_download_blocked"))
             return
         if self.downloader.is_active:
-            self.show_error("Zaten aktif bir indirme var.")
+            self.show_error(self.t("main.download_already_active"))
             return
         if not self.current_result or not self.current_result.content:
-            self.show_error("Once analizi tamamla.")
+            self.show_error(self.t("main.complete_analysis_first"))
             return
         selected_item = self._selected_format_item()
         if not selected_item:
-            self.show_error("Once bir format sec.")
+            self.show_error(self.t("main.select_format_first"))
             return
 
         output_dir = self._current_download_dir()
@@ -1207,52 +1260,52 @@ class MainWindow(QMainWindow):
             on_log=self.ui_signals.log.emit,
         )
         if not started:
-            self.show_error("Indirme motoru mesgul.")
+            self.show_error("The download engine is busy.")
             return
 
         self.progress_bar.setValue(0)
-        self.progress_details.setText("%0 | Hiz: - | Kalan: - | Boyut: - / - | Asama: hazirlaniyor")
+        self.progress_details.setText(self.t("main.preparing_progress"))
         self.download_button.setEnabled(False)
         self.stop_button.setEnabled(True)
         self.open_file_button.setEnabled(False)
         self.reencode_button.setEnabled(False)
         self.log_service.info(
-            f"Indirme istegi alindi | url={request.url} | format={selected_item.format_id} | ext={selected_item.ext} | media_type={selected_item.media_type} | mode={media_mode} | target_container={target_container} | remux={request.remux_enabled} | browser={request.browser} | fallback={request.fallback_browsers}"
+            f"Download request received | url={request.url} | format={selected_item.format_id} | ext={selected_item.ext} | media_type={selected_item.media_type} | mode={media_mode} | target_container={target_container} | remux={request.remux_enabled} | browser={request.browser} | fallback={request.fallback_browsers}"
         )
-        self.statusBar().showMessage("Indirme baslatildi")
-        self._append_log(f"Indirme baslatildi | site_family={site_family} | format={selected_item.format_id} | mode={media_mode} | browser={request.browser} | fallback={request.fallback_browsers}")
+        self.statusBar().showMessage(self.t("main.download_started"))
+        self._append_log(f"Download started | site_family={site_family} | format={selected_item.format_id} | mode={media_mode} | browser={request.browser} | fallback={request.fallback_browsers}")
         self._trace("start_download.exit", started=started)
 
     def _stop_download(self):
         if not self.downloader.is_active:
-            self.statusBar().showMessage("Durdurulacak aktif indirme yok")
+            self.statusBar().showMessage(self.t("main.no_active_download_to_stop"))
             return
         self.downloader.stop()
-        self.statusBar().showMessage("Durdurma istendi")
-        self._append_log("Kullanici indirmeyi durdurmak istedi")
+        self.statusBar().showMessage(self.t("main.stop_requested"))
+        self._append_log(self.t("main.user_requested_stop"))
         self._trace("stop_download")
 
     def _on_download_progress(self, status):
         self.progress_bar.setValue(int(status.percent))
         self.progress_details.setText(
-            f"%{status.percent:.1f} | Hiz: {status.speed_text} | Kalan: {status.eta_text} | "
-            f"Boyut: {status.downloaded_text} / {status.total_text} | Asama: {status.stage}"
+            f"%{status.percent:.1f} | Speed: {status.speed_text} | Remaining: {status.eta_text} | "
+            f"Size: {status.downloaded_text} / {status.total_text} | Stage: {status.stage}"
         )
         if status.filename:
-            self.statusBar().showMessage(f"Aktif dosya: {Path(status.filename).name}")
+            self.statusBar().showMessage(self.t("main.active_file", name=Path(status.filename).name))
 
     def _on_download_completed(self, status):
         self.progress_bar.setValue(100)
-        self.progress_details.setText("%100 | Hiz: - | Kalan: 00:00 | Boyut: - / - | Asama: tamamlandi")
+        self.progress_details.setText(self.t("main.download_done_progress"))
         self.download_button.setEnabled(True)
         self.stop_button.setEnabled(False)
         self.last_completed_path = status.final_path or status.filename or ""
         self.open_file_button.setEnabled(bool(self.last_completed_path))
         self.reencode_button.setEnabled(bool(self.last_completed_path))
-        self.statusBar().showMessage("Indirme tamamlandi")
+        self.statusBar().showMessage(self.t("main.download_completed"))
         if self.last_completed_path:
-            self._append_log(f"Cikti: {self.last_completed_path}")
-        self.log_service.info(f"Indirme tamamlandi | final_path={self.last_completed_path or '-'}")
+            self._append_log(self.t("main.output_path", path=self.last_completed_path))
+        self.log_service.info(f"Download completed | final_path={self.last_completed_path or '-'}")
         self._trace("download_completed", path=self.last_completed_path or "")
 
     def _on_download_error(self, message: str):
@@ -1261,15 +1314,15 @@ class MainWindow(QMainWindow):
         self._update_filename_preview()
         normalized_message = self._normalize_multiline_message(message)
         self._append_log(normalized_message)
-        is_cancelled = "durduruldu" in normalized_message.lower() or "cancel" in normalized_message.lower()
+        is_cancelled = "cancel" in normalized_message.lower() or "stop" in normalized_message.lower()
         if is_cancelled:
-            self.statusBar().showMessage("Indirme durduruldu")
-            self.progress_details.setText("%0 | Hiz: - | Kalan: - | Boyut: - / - | Asama: durduruldu")
-            self.log_service.info(f"Indirme durduruldu | {normalized_message.replace(chr(10), ' | ')}")
+            self.statusBar().showMessage(self.t("main.stop"))
+            self.progress_details.setText(self.t("main.download_stopped_progress"))
+            self.log_service.info(f"Download stopped | {normalized_message.replace(chr(10), ' | ')}")
             self._trace("download_cancelled", message=normalized_message)
             return
-        self.statusBar().showMessage("Indirme hatasi")
-        self.log_service.error(f"Indirme hatasi | {normalized_message.replace(chr(10), ' | ')}")
+        self.statusBar().showMessage(self.t("main.download_error"))
+        self.log_service.error(f"Download error | {normalized_message.replace(chr(10), ' | ')}")
         self._trace("download_error", message=normalized_message)
         self.show_error(normalized_message)
 
@@ -1289,27 +1342,27 @@ class MainWindow(QMainWindow):
         folder = self._current_download_dir()
         self._trace("open_download_folder.enter", folder=folder)
         if not Path(folder).exists():
-            self.show_error("Indirme klasoru bulunamadi.")
+            self.show_error(self.t("main.folder_missing"))
             return
         try:
             if hasattr(subprocess, "CREATE_NO_WINDOW"):
                 subprocess.Popen(["explorer", folder], creationflags=subprocess.CREATE_NO_WINDOW)
             else:
                 subprocess.Popen(["explorer", folder])
-            self.log_service.info(f"Klasor acildi: {folder}")
+            self.log_service.info(f"Folder opened: {folder}")
         except Exception as exc:
-            self.log_service.error(f"Klasor acma hatasi | folder={folder} | error={exc}")
-            self.show_error(f"Klasor acma hatasi: {exc}")
+            self.log_service.error(f"Folder open error | folder={folder} | error={exc}")
+            self.show_error(self.t("main.folder_open_error", error=exc))
         self._trace("open_download_folder.exit", folder=folder)
 
     def _open_last_file(self):
         if not self.last_completed_path:
-            self.show_error("Acilacak dosya yok.")
+            self.show_error(self.t("main.no_file_to_open"))
             return
         path = Path(self.last_completed_path)
         self._trace("open_last_file.enter", path=str(path))
         if not path.exists():
-            self.show_error("Son cikti dosyasi bulunamadi.")
+            self.show_error(self.t("main.output_not_found"))
             return
         try:
             if os.name == "nt":
@@ -1318,10 +1371,10 @@ class MainWindow(QMainWindow):
                 subprocess.Popen(["open", str(path)])
             else:
                 subprocess.Popen(["xdg-open", str(path)])
-            self.log_service.info(f"Dosya acildi: {path}")
+            self.log_service.info(f"File opened: {path}")
         except Exception as exc:
-            self.log_service.error(f"Dosya acma hatasi | path={path} | error={exc}")
-            self.show_error(f"Dosya acma hatasi: {exc}")
+            self.log_service.error(f"File open error | path={path} | error={exc}")
+            self.show_error(self.t("main.file_open_error", error=exc))
         self._trace("open_last_file.exit", path=str(path))
 
 
@@ -1352,15 +1405,15 @@ class MainWindow(QMainWindow):
 
     def _launch_external_reencode(self):
         if not self.last_completed_path:
-            self.show_error("Re-encode icin tamamlanmis bir dosya yok.")
+            self.show_error(self.t("main.no_finished_file_for_reencode"))
             return
         source_path = Path(self.last_completed_path)
         self._trace("external_reencode.enter", path=str(source_path))
         if not source_path.exists():
-            self.show_error("Re-encode kaynagi bulunamadi.")
+            self.show_error(self.t("main.reencode_source_missing"))
             return
         if os.name != "nt":
-            self.show_error("Bu ilk surum yalnizca Windows ayri CMD baslatma akisini destekler.")
+            self.show_error(self.t("main.reencode_windows_only"))
             return
 
         preset_key = self.reencode_preset_combo.currentData() or "mp4_h265_balanced"
@@ -1368,7 +1421,7 @@ class MainWindow(QMainWindow):
         self.settings_service.save(self.settings)
         ffmpeg_path, ffmpeg_source = self.path_manager.resolve_binary("ffmpeg", self.settings.ffmpeg_path)
         if not ffmpeg_path:
-            self.show_error("FFmpeg bulunamadi. Once FFmpeg'i erisilebilir hale getir.")
+            self.show_error(self.t("main.ffmpeg_missing"))
             return
 
         output_path = self._build_reencode_output_path(source_path, preset_key)
@@ -1378,15 +1431,15 @@ class MainWindow(QMainWindow):
             "@echo off",
             "chcp 65001>nul",
             "title VDM FFmpeg Re-encode",
-            "echo VDM ayri bir CMD penceresinde FFmpeg re-encode baslatti.",
-            "echo Bu surec VDM tarafindan takip edilmez.",
+            self.t("main.external_reencode_cmd_started"),
+            self.t("main.external_reencode_cmd_untracked"),
             "echo.",
-            f"echo Kaynak: {source_path}",
-            f"echo Hedef : {output_path}",
+            self.t("main.external_reencode_cmd_source", path=source_path),
+            self.t("main.external_reencode_cmd_target", path=output_path),
             "echo.",
             quoted_command,
             "echo.",
-            "echo Islem tamamlandi. Bu pencereyi kapatabilirsin.",
+            self.t("main.external_reencode_cmd_completed"),
             "pause",
             "",
         ])
@@ -1396,17 +1449,17 @@ class MainWindow(QMainWindow):
         script_path.write_text(script_body, encoding="utf-8")
         try:
             subprocess.Popen(["cmd", "/c", "start", "", str(script_path)], creationflags=subprocess.CREATE_NEW_CONSOLE)
-            self._append_log(f"Harici FFmpeg re-encode baslatildi | preset={self.reencode_presets[preset_key]['label']} | kaynak={source_path.name} | hedef={output_path.name}")
-            self.statusBar().showMessage("Harici FFmpeg re-encode CMD penceresinde baslatildi")
+            self._append_log(f"External FFmpeg re-encode started | preset={self.reencode_presets[preset_key]['label']} | source={source_path.name} | target={output_path.name}")
+            self.statusBar().showMessage(self.t("main.external_reencode_started"))
             self.log_service.info(
-                f"Harici re-encode baslatildi | ffmpeg_source={ffmpeg_source} | preset={preset_key} | source={source_path} | output={output_path} | script={script_path}"
+                f"External re-encode started | ffmpeg_source={ffmpeg_source} | preset={preset_key} | source={source_path} | output={output_path} | script={script_path}"
             )
         except Exception as exc:
-            self.log_service.error(f"Harici re-encode baslatma hatasi | error={exc}")
-            self.show_error(f"Harici FFmpeg re-encode baslatilamadi: {exc}")
+            self.log_service.error(f"External re-encode start error | error={exc}")
+            self.show_error(self.t("main.external_reencode_failed", error=exc))
             return
         self._trace("external_reencode.exit", preset=preset_key, output=str(output_path))
 
     def show_error(self, message: str):
         self.log_service.error(f"UI error dialog | {message.replace(chr(10), ' | ')}")
-        QMessageBox.critical(self, "Hata", message)
+        QMessageBox.critical(self, self.t("common.error"), message)

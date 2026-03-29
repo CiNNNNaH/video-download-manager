@@ -30,6 +30,19 @@ class ThemeService:
                     margin-top: 8px;
                     padding-top: 8px;
                 }
+                #mediaTablePanel {
+                    background-color: transparent;
+                    border: 1px solid #555;
+                }
+                #selectionSummaryPanel {
+                    background-color: #2b2c2f;
+                    border: 1px solid #555;
+                    border-radius: 0px;
+                }
+                #selectionSummaryCaption, #selectionSummaryValue {
+                    background-color: #2b2c2f;
+                    color: #e8eaed;
+                }
                 """
             )
             return

@@ -6,10 +6,11 @@ class AppSettings:
     app_name: str = "Video Download Manager"
     version: str = "VDM_v1.2.0"
     theme: str = "system"  # light, dark, system
+    language: str = "en"
     default_browser: str = "chrome"
     fallback_browsers: bool = True
     default_download_dir: str = ""
-    default_view_mode: str = "simple"  # simple, advanced
+    default_view_mode: str = "advanced"  # simple, advanced
     remux_enabled: bool = True
     target_container: str = "auto"
     filename_template: str = "%(title)s.%(ext)s"
@@ -29,7 +30,7 @@ class AppSettings:
     format_table_column_order: list[str] = field(default_factory=lambda: [
         "ID",
         "File Type",
-        "Secim",
+        "Choice",
         "Resolution",
         "Filesize",
         "TBR",
@@ -43,7 +44,7 @@ class AppSettings:
     format_table_column_widths: dict[str, int] = field(default_factory=lambda: {
         "ID": 70,
         "File Type": 110,
-        "Secim": 180,
+        "Choice": 180,
         "Resolution": 110,
         "Filesize": 110,
         "TBR": 70,

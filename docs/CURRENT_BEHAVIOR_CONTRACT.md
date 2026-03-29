@@ -1,6 +1,6 @@
 # Current Behavior Contract
 
-This document defines the intended behavior for the active VDM_v1.2.0 stabilization line.
+This document defines the intended behavior for the active VDM_v1.1 stabilization line.
 
 ## 1. Scope
 - VDM is a `yt-dlp` GUI wrapper for supported sites.

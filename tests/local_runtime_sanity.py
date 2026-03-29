@@ -26,7 +26,7 @@ def run() -> None:
         settings_service = SettingsService(env.data_dir / "settings.json")
         settings_service.save(settings)
         loaded = settings_service.load()
-        assert loaded.version == "VDM_v1.1"
+        assert loaded.version == "VDM_v1.2.0"
         assert loaded.theme in {"light", "dark", "system"}
 
         log_service = LogService(temp_root / "log.txt", env.logs_dir / "app.log")

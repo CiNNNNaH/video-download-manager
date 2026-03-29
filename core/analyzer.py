@@ -87,11 +87,11 @@ class Analyzer:
     def analyze(self, url: str, browser: str, fallback_browsers: bool = False) -> AnalyzeResult:
         normalized = UrlUtils.normalize_url(url)
         if not UrlUtils.is_valid_url(normalized):
-            return AnalyzeResult(ok=False, message="Gecersiz URL", technical_details="URL http/https formatinda degil.")
+            return AnalyzeResult(ok=False, message="Invalid URL", technical_details="The URL is not in http/https format.")
 
         candidates = BrowserCookies.resolve_candidates(browser, fallback_browsers)
         if not candidates:
-            candidates = BrowserCookies.resolve_candidates("cookies kapali", False)
+            candidates = BrowserCookies.resolve_candidates("cookies_disabled", False)
 
         errors: list[str] = []
         for candidate in candidates:
@@ -110,7 +110,7 @@ class Analyzer:
                     simple_formats=simple,
                     advanced_formats=advanced,
                     used_browser=candidate.label,
-                    message=f"Analiz basarili. Kullanilan browser: {candidate.label}",
+                    message=f"Analysis completed. Browser used: {candidate.label}",
                 )
             except DownloadError as exc:
                 errors.append(f"{candidate.label}: {exc}")
@@ -118,12 +118,12 @@ class Analyzer:
                 errors.append(f"{candidate.label}: {type(exc).__name__}: {exc}")
 
         app_error = ErrorHandler.classify_analyze_error(
-            message="Analiz basarisiz oldu.",
+            message="Analysis failed.",
             detail=" | ".join(errors[:4]),
         )
         return AnalyzeResult(
             ok=False,
             used_browser=", ".join(c.label for c in candidates),
             message=app_error.message,
-            technical_details=f"{app_error.title} | {app_error.detail} | Oneri: {app_error.suggestion}",
+            technical_details=f"{app_error.title} | {app_error.detail} | Suggestion: {app_error.suggestion}",
         )

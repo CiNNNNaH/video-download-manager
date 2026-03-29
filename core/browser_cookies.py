@@ -16,7 +16,7 @@ class BrowserCookies:
         "brave": BrowserCandidate("brave", "Brave"),
         "firefox": BrowserCandidate("firefox", "Firefox"),
         "edge": BrowserCandidate("edge", "Edge"),
-        "cookies kapali": BrowserCandidate("", "Cookies Kapali"),
+        "cookies_disabled": BrowserCandidate("", "Cookies Disabled"),
     }
 
     FALLBACK_ORDER = ["chrome", "edge", "brave", "firefox"]
@@ -24,7 +24,7 @@ class BrowserCookies:
     @classmethod
     def resolve_candidates(cls, selected: str, fallback_enabled: bool) -> List[BrowserCandidate]:
         selected = (selected or "").strip().lower()
-        if selected == "cookies kapali":
+        if selected == "cookies_disabled":
             return [cls.NAME_MAP[selected]]
 
         candidates: list[BrowserCandidate] = []

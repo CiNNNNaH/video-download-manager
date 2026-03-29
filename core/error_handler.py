@@ -11,179 +11,179 @@ class ErrorHandler:
         if "unsupported url" in blob or "unsupported site" in blob:
             return AppError(
                 code="unsupported_url",
-                title="Desteklenmeyen Link",
-                message="Bu baglanti yt-dlp tarafinda desteklenmiyor olabilir.",
+                title="Unsupported Link",
+                message="This link may not be supported by yt-dlp.",
                 detail=detail or message,
-                suggestion="Farkli bir link deneyin veya yt-dlp'yi guncelleyip tekrar deneyin.",
+                suggestion="Try a different link or update yt-dlp and try again.",
             )
         if "login" in blob or "sign in" in blob or "private" in blob or "members only" in blob:
             return AppError(
                 code="login_required",
-                title="Oturum Gerekli",
-                message="Icerige erismek icin gecerli browser cookies gerekebilir.",
+                title="Login Required",
+                message="Valid browser cookies may be required to access this content.",
                 detail=detail or message,
-                suggestion="Linki secili browser'da acin, hesaba girin ve yeniden analiz edin.",
+                suggestion="Open the link in the selected browser, sign in, and analyze again.",
             )
         if "age-restricted" in blob or "confirm your age" in blob:
             return AppError(
                 code="age_gate",
-                title="Yas Siniri",
-                message="Icerik yas siniri nedeniyle ek yetki istiyor olabilir.",
+                title="Age Restriction",
+                message="This content may require additional authorization because of an age restriction.",
                 detail=detail or message,
-                suggestion="Secili browser'da hesaba girin ve ayni browser ile tekrar deneyin.",
+                suggestion="Sign in with the selected browser and try again using the same browser.",
             )
         if "geo" in blob or "not available in your country" in blob or "this video is not available in your country" in blob:
             return AppError(
                 code="geo_blocked",
-                title="Bolgesel Engelleme",
-                message="Icerik bulundugunuz bolgede kullanilamiyor olabilir.",
+                title="Regional Restriction",
+                message="This content may not be available in your region.",
                 detail=detail or message,
-                suggestion="Farkli hedef veya farkli erisim kosulu ile tekrar deneyin.",
+                suggestion="Try again with a different access condition.",
             )
         if "cookie" in blob and ("decrypt" in blob or "dpapi" in blob):
             return AppError(
                 code="cookie_decrypt",
-                title="Cookie Cozme Hatasi",
-                message="Secili browser cookie verisi okunamadi veya cozulmedi.",
+                title="Cookie Decryption Error",
+                message="The selected browser cookie data could not be read or decrypted.",
                 detail=detail or message,
-                suggestion="Baska bir browser secin veya ilgili browser'da linki acip tekrar deneyin.",
+                suggestion="Choose another browser or open the link in that browser and try again.",
             )
         if "cookie" in blob:
             return AppError(
                 code="cookie_access",
-                title="Cookie Erisim Hatasi",
-                message="Secili browser'dan gecerli cookie alinmadi.",
+                title="Cookie Access Error",
+                message="No valid cookies were obtained from the selected browser.",
                 detail=detail or message,
-                suggestion="Browser secimini degistirin veya fallback secenegini acin.",
+                suggestion="Change the browser selection or enable fallback.",
             )
         if "js challenge" in blob or "n challenge" in blob or "deno" in blob:
             return AppError(
                 code="js_challenge",
-                title="JS Challenge Cozum Sorunu",
-                message="Site challenge korumasi nedeniyle format bilgisi cikmadi.",
+                title="JS Challenge Resolution Error",
+                message="No format information was returned because of site challenge protection.",
                 detail=detail or message,
-                suggestion="Deno ve yt-dlp surumlerini guncelleyin, sonra tekrar deneyin.",
+                suggestion="Update Deno and yt-dlp, then try again.",
             )
         if "429" in blob or "too many requests" in blob or "rate limit" in blob:
             return AppError(
                 code="rate_limited",
-                title="Hiz Siniri",
-                message="Site gecici olarak cok fazla istek algiladi.",
+                title="Rate Limit",
+                message="The site temporarily detected too many requests.",
                 detail=detail or message,
-                suggestion="Biraz bekleyin, browser/cookie modunu kontrol edin ve sonra tekrar deneyin.",
+                suggestion="Wait a while, check the browser/cookie mode, and try again.",
             )
         if "403" in blob or "forbidden" in blob:
             return AppError(
                 code="forbidden",
-                title="Erisim Reddedildi",
-                message="Sunucu erisimi reddetti. Cookie, bolge veya koruma engeli olabilir.",
+                title="Access Denied",
+                message="The server denied access. The issue may be cookies, region, or protection.",
                 detail=detail or message,
-                suggestion="Browser oturumunu, yt-dlp surumunu ve hedef erisimi kontrol edin.",
+                suggestion="Check the browser session, yt-dlp version, and target access.",
             )
         if "format is not available" in blob or "only images are available" in blob or "requested format is not available" in blob:
             return AppError(
                 code="format_unavailable",
-                title="Format Bulunamadi",
-                message="Link analiz edildi ama indirilebilir format cikmadi.",
+                title="Format Not Found",
+                message="The link was analyzed but no downloadable format was returned.",
                 detail=detail or message,
-                suggestion="Gelismis gorunumu acin veya yt-dlp'yi guncelleyip yeniden analiz edin.",
+                suggestion="Open advanced view or update yt-dlp and analyze again.",
             )
         if "network" in blob or "timed out" in blob or "connection" in blob:
             return AppError(
                 code="network_error",
-                title="Baglanti Hatasi",
-                message="Ag baglantisi veya site erisimi sirasinda hata olustu.",
+                title="Connection Error",
+                message="A network or site access error occurred.",
                 detail=detail or message,
-                suggestion="Internet baglantisini ve hedef site erisimini kontrol edin.",
+                suggestion="Check the internet connection and target site access.",
             )
         return AppError(
             code="analyze_error",
-            title="Analiz Hatasi",
-            message=message or "Link analizi basarisiz oldu.",
+            title="Analysis Error",
+            message=message or "Link analysis failed.",
             detail=detail,
-            suggestion="Detayli logu kontrol edin ve gerekirse bagimliliklari guncelleyin.",
+            suggestion="Check the detailed log and update dependencies if needed.",
         )
 
     @staticmethod
     def classify_download_error(message: str) -> AppError:
         blob = (message or "").lower()
 
-        if "durduruldu" in blob or "cancel" in blob:
+        if "stopped by the user" in blob or "cancel" in blob or "download stopped" in blob:
             return AppError(
                 code="download_cancelled",
-                title="Indirme Durduruldu",
-                message="Indirme kullanici tarafindan durduruldu.",
+                title="Download Stopped",
+                message="The download was stopped by the user.",
                 detail=message,
-                suggestion="Gerekirse ayni formatla yeniden deneyin.",
+                suggestion="Try again with the same format if needed.",
             )
         if "requested format is not available" in blob:
             return AppError(
                 code="format_unavailable",
-                title="Secilen Format Kullanilamiyor",
-                message="Secilen format artik kullanilabilir degil veya eksik akisa bagli.",
+                title="Selected Format Unavailable",
+                message="The selected format is no longer available or depends on a missing stream.",
                 detail=message,
-                suggestion="Linki yeniden analiz edin ve farkli bir format secin.",
+                suggestion="Analyze the link again and choose a different format.",
             )
         if "ffmpeg" in blob and ("not found" in blob or "missing" in blob):
             return AppError(
                 code="ffmpeg_missing",
-                title="FFmpeg Eksik",
-                message="Birlesitirme veya remux icin ffmpeg gerekli ama bulunamadi.",
+                title="FFmpeg Missing",
+                message="FFmpeg is required for merging or remux but was not found.",
                 detail=message,
-                suggestion="Kurulum ekranindan ffmpeg'i kurup tekrar deneyin.",
+                suggestion="Install FFmpeg from the setup dialog and try again.",
             )
         if "permission" in blob or "access is denied" in blob:
             return AppError(
                 code="write_permission",
-                title="Yazma Izni Hatasi",
-                message="Cikti klasorune yazma izni yok veya dosya kilitli.",
+                title="Write Permission Error",
+                message="There is no write permission for the output folder or the file is locked.",
                 detail=message,
-                suggestion="Farkli bir cikti klasoru secin ve dosya izinlerini kontrol edin.",
+                suggestion="Choose a different output folder and check file permissions.",
             )
         if "429" in blob or "too many requests" in blob or "rate limit" in blob:
             return AppError(
                 code="rate_limited",
-                title="Hiz Siniri",
-                message="Site indirme tarafinda gecici istek sinirina girdi.",
+                title="Rate Limit",
+                message="The site has temporarily rate-limited download requests.",
                 detail=message,
-                suggestion="Biraz bekleyin ve sonra tekrar deneyin.",
+                suggestion="Wait a while and then try again.",
             )
         if "403" in blob or "forbidden" in blob:
             return AppError(
                 code="forbidden",
-                title="Erisim Reddedildi",
-                message="Indirme istegi reddedildi. Yetki veya koruma sorunu olabilir.",
+                title="Access Denied",
+                message="The download request was rejected. There may be an authorization or protection issue.",
                 detail=message,
-                suggestion="Browser oturumunu, yt-dlp surumunu ve hedef erisimi kontrol edin.",
+                suggestion="Check the browser session, yt-dlp version, and target access.",
             )
         if "network" in blob or "timed out" in blob or "connection" in blob:
             return AppError(
                 code="network_error",
-                title="Indirme Baglanti Hatasi",
-                message="Indirme sirasinda ag baglantisi koptu veya site cevap vermedi.",
+                title="Download Connection Error",
+                message="The network connection dropped during download or the site did not respond.",
                 detail=message,
-                suggestion="Baglantiyi kontrol edin ve yeniden deneyin.",
+                suggestion="Check the connection and try again.",
             )
         if "login" in blob or "private" in blob or "members only" in blob or "age-restricted" in blob:
             return AppError(
                 code="login_required",
-                title="Korumali Icerik",
-                message="Icerik icin gecerli oturum veya yetki gerekiyor.",
+                title="Protected Content",
+                message="This content requires a valid session or authorization.",
                 detail=message,
-                suggestion="Secili browser'da oturum acin ve ayni browser ile tekrar deneyin.",
+                suggestion="Sign in with the selected browser and try again using the same browser.",
             )
-        if "yt-dlp hatasi" in blob:
+        if "yt-dlp error" in blob or "yt-dlp hatasi" in blob:
             return AppError(
                 code="yt_dlp_error",
-                title="yt-dlp Hatasi",
-                message="Indirme yt-dlp tarafinda hata ile sonlandi.",
+                title="yt-dlp Error",
+                message="The download ended with a yt-dlp error.",
                 detail=message,
-                suggestion="yt-dlp surumunu kontrol edin ve log detayina bakin.",
+                suggestion="Check the yt-dlp version and review the log details.",
             )
         return AppError(
             code="download_error",
-            title="Indirme Hatasi",
-            message="Indirme islemi basarisiz oldu.",
+            title="Download Error",
+            message="The download operation failed.",
             detail=message,
-            suggestion="Detayli logu kontrol edin, gerekirse yeniden analiz edip tekrar deneyin.",
+            suggestion="Check the detailed log, analyze again if needed, and retry.",
         )

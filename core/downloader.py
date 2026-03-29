@@ -192,7 +192,7 @@ class Downloader:
             self._stop_event.clear()
 
         def run() -> None:
-            final_status = DownloadStatus(status="started", stage="hazirlaniyor", message="Indirme hazirlaniyor")
+            final_status = DownloadStatus(status="started", stage="preparing", message="Preparing download")
             last_filename = ""
             final_path = ""
             try:
@@ -200,7 +200,7 @@ class Downloader:
                 started_at = datetime.now()
                 output_dir.mkdir(parents=True, exist_ok=True)
                 on_progress(final_status)
-                on_log(f"Indirme hazirlaniyor | url={request.url}")
+                on_log(f"Preparing download | url={request.url}")
 
                 format_selector = self._build_format_selector(request)
                 remux_target = RemuxPlanner.determine_target(
@@ -215,12 +215,12 @@ class Downloader:
                     ffmpeg_path, _ = self.path_manager.resolve_binary("ffmpeg", self.settings.ffmpeg_path)
                     if not ffmpeg_path:
                         raise DownloadError(
-                            "ffmpeg missing: birlestirme/remux icin ffmpeg gerekli ama bulunamadi"
+                            "ffmpeg missing: FFmpeg is required for merging/remux but was not found"
                         )
 
                 candidates = BrowserCookies.resolve_candidates(request.browser, request.fallback_browsers)
                 if not candidates:
-                    candidates = BrowserCookies.resolve_candidates("cookies kapali", False)
+                    candidates = BrowserCookies.resolve_candidates("cookies_disabled", False)
 
                 errors: list[str] = []
                 for candidate in candidates:
@@ -236,12 +236,12 @@ class Downloader:
                     if remux_target:
                         opts["merge_output_format"] = remux_target
                         opts["remuxvideo"] = remux_target
-                        on_log(f"Remux hedefi aktif: {remux_target}")
+                        on_log(f"Remux target active: {remux_target}")
 
                     def hook(data: dict[str, Any]) -> None:
                         nonlocal last_filename, final_path
                         if self._stop_event.is_set():
-                            raise DownloadCancelled("Indirme kullanici tarafindan durduruldu.")
+                            raise DownloadCancelled("Download stopped by the user.")
 
                         status = data.get("status")
                         downloaded = data.get("downloaded_bytes") or data.get("processed_bytes")
@@ -258,14 +258,14 @@ class Downloader:
                             on_progress(
                                 DownloadStatus(
                                     status="downloading",
-                                    stage="indiriliyor",
+                                    stage="downloading",
                                     percent=percent,
                                     speed_text=speed,
                                     eta_text=eta,
                                     downloaded_text=self._human_size(downloaded),
                                     total_text=self._human_size(total),
                                     filename=last_filename,
-                                    message="Indirme suruyor",
+                                    message="downloading",
                                 )
                             )
                         elif status == "finished":
@@ -273,21 +273,21 @@ class Downloader:
                             on_progress(
                                 DownloadStatus(
                                     status="finished",
-                                    stage="birlestiriliyor/remux yapiliyor",
+                                    stage="merging/remuxing",
                                     percent=100.0,
                                     speed_text=speed,
                                     eta_text="00:00",
                                     downloaded_text=self._human_size(downloaded),
                                     total_text=self._human_size(total),
                                     filename=last_filename,
-                                    message="Ham indirme tamamlandi",
+                                    message="Raw download completed",
                                 )
                             )
 
                     opts["progress_hooks"] = [hook]
 
                     try:
-                        on_log(f"Indirme denemesi | cookie kaynagi={candidate.label} | format={format_selector}")
+                        on_log(f"Download attempt | cookie_source={candidate.label} | format={format_selector}")
                         with YoutubeDL(opts) as ydl:
                             info = ydl.extract_info(request.url, download=True)
                             if isinstance(info, dict):
@@ -304,14 +304,14 @@ class Downloader:
                         raise
                     except DownloadError as exc:
                         errors.append(f"{candidate.label}: {exc}")
-                        on_log(f"Indirme denemesi basarisiz | {candidate.label} | {exc}")
+                        on_log(f"Download attempt failed | {candidate.label} | {exc}")
                         continue
                     except Exception as exc:
                         errors.append(f"{candidate.label}: {type(exc).__name__}: {exc}")
-                        on_log(f"Indirme denemesi basarisiz | {candidate.label} | {type(exc).__name__}: {exc}")
+                        on_log(f"Download attempt failed | {candidate.label} | {type(exc).__name__}: {exc}")
                         continue
                 else:
-                    raise DownloadError(" | ".join(errors[:4]) or "Indirme basarisiz oldu")
+                    raise DownloadError(" | ".join(errors[:4]) or "Download failed")
 
                 resolved_final_path = self._resolve_final_output_path(
                     output_dir=output_dir,
@@ -321,7 +321,7 @@ class Downloader:
                 )
                 status = DownloadStatus(
                     status="completed",
-                    stage="tamamlandi",
+                    stage="completed",
                     percent=100.0,
                     speed_text="-",
                     eta_text="00:00",
@@ -329,28 +329,28 @@ class Downloader:
                     total_text="-",
                     filename=last_filename,
                     final_path=resolved_final_path,
-                    message="Indirme tamamlandi",
+                    message="Download completed",
                 )
                 on_complete(status)
-                on_log(f"Indirme tamamlandi | final_path={resolved_final_path or "-"}")
+                on_log(f"Download completed | final_path={resolved_final_path or "-"}")
             except DownloadCancelled as exc:
                 app_error = ErrorHandler.classify_download_error(str(exc))
                 on_error(
-                    f"{app_error.title}\n{app_error.message}\n\n{app_error.detail}\n\nOneri: {app_error.suggestion}"
+                    f"{app_error.title}\n{app_error.message}\n\n{app_error.detail}\n\nSuggestion: {app_error.suggestion}"
                 )
                 on_log(str(exc))
             except DownloadError as exc:
-                raw_message = f"yt-dlp hatasi: {exc}"
+                raw_message = f"yt-dlp error: {exc}"
                 app_error = ErrorHandler.classify_download_error(raw_message)
                 on_error(
-                    f"{app_error.title}\n{app_error.message}\n\n{app_error.detail}\n\nOneri: {app_error.suggestion}"
+                    f"{app_error.title}\n{app_error.message}\n\n{app_error.detail}\n\nSuggestion: {app_error.suggestion}"
                 )
                 on_log(raw_message)
             except Exception as exc:
-                raw_message = f"Indirme hatasi: {type(exc).__name__}: {exc}"
+                raw_message = f"Download error: {type(exc).__name__}: {exc}"
                 app_error = ErrorHandler.classify_download_error(raw_message)
                 on_error(
-                    f"{app_error.title}\n{app_error.message}\n\n{app_error.detail}\n\nOneri: {app_error.suggestion}"
+                    f"{app_error.title}\n{app_error.message}\n\n{app_error.detail}\n\nSuggestion: {app_error.suggestion}"
                 )
                 on_log(raw_message)
             finally:

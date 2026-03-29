@@ -1,18 +1,6 @@
-## VDM_v1.2.0 line
-
-### Package 1.0
-**Status:** validated
-
-- Opened the `VDM_v1.2.0` line from the stabilized `VDM_v1.1 / Package 19.0` baseline.
-- Aligned repository metadata, docs, and in-app version strings for GitHub publishing.
-- Added `.github` issue templates and pull-request template.
-- No UI/layout or download-engine behavior changes were introduced.
-
-## Archived VDM_v1.1 line
-
 # PACKAGE HISTORY
 
-This file is the consolidated package index across VDM product lines. The active line now starts at `VDM_v1.2.0 / Package 1.0`, while the full `VDM_v1.1` history remains below.
+This file is the consolidated package index for the VDM_v1.1 line.
 
 Status markers:
 - validated: passed the user-facing test gate in this conversation
@@ -22,8 +10,7 @@ Status markers:
 - recovery: rollback-based rebuild after the failed Package 15 layout branch
 
 Versioning note:
-- `VDM_v1.2.0` is the active product version.
-- `VDM_v1.1` remains the archived stabilization line.
+- `VDM_v1.1` is the product version.
 - `Package x.y` is the delivery iteration inside that product line.
 - Integer package numbers are normalized here as `.0` for readability and sorting.
 
@@ -276,9 +263,3 @@ Status: validated
 - `.0` normalization applied consistently across `CHANGELOG.md` and `PACKAGE_HISTORY.md`.
 - Requirements and supported tools clarified: Python runtime, Python packages, `ffmpeg`, `deno`, and optional Node.js note.
 - Browser cookie reliability documented with Firefox as the preferred recovery path in current tested environments.
-
-
-## VDM_v1.2.0 / Package 1.1 - GitHub Repo Cleanup
-- Status: validated
-- Purpose: minimize the GitHub-facing repository package before first upload.
-- Changes: removed individual PACKAGE_*_NOTES.md files, removed __pycache__ and compiled artifacts, retained PACKAGE_HISTORY.md as the single package history reference.

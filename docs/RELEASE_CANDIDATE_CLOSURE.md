@@ -1,6 +1,6 @@
 # Release Candidate Closure
 
-This document closes the `VDM_v1.2.0` line at the package level.
+This document closes the `VDM_v1.1` line at the package level.
 
 ## Scope of Package 19.0
 - no new product features

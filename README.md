@@ -2,13 +2,13 @@
 
 Video Download Manager (VDM) is a portable-first Windows desktop downloader built around `yt-dlp` with a PySide6 GUI.
 
-- **Product Version:** `VDM_v1.2.0`
-- **Current Delivery Package:** `1.0`
+- **Product Version:** `VDM_v1.1`
+- **Current Delivery Package:** `19.0`
 
 ## Versioning model
 VDM uses two parallel identifiers:
-- **Product version**: the main product line, currently `VDM_v1.2.0`
-- **Package version**: delivery iterations inside the same product line, for example `1.0`, `1.1`, `1.2` within the active product line
+- **Product version**: the main product line, currently `VDM_v1.1`
+- **Package version**: delivery iterations inside the same product line, for example `15R.2`, `16.0`, `17.2`, `19.0`
 
 Integer package numbers are normalized in documentation as `.0` for readability and sorting.
 
@@ -27,10 +27,6 @@ Integer package numbers are normalized in documentation as `.0` for readability 
 - protected or age-gated content may still fail depending on browser/session state
 - Instagram and similar sites may fail because of account/session/content restrictions even when the app itself is behaving correctly
 - cookie-backed flows are environment-sensitive on Windows because browser database access and DPAPI behavior are not equally reliable across browsers
-
-
-## GitHub repo note
-This GitHub-facing package intentionally excludes individual `PACKAGE_*_NOTES.md` files. `PACKAGE_HISTORY.md` is the single retained package timeline file for repository history.
 
 ## Requirements and supported tools
 
@@ -66,7 +62,7 @@ Current tested behavior in this project line:
 
 ## Media processing scope
 - normal downloads may use remux when required
-- optional FFmpeg re-encode actions are allowed in `VDM_v1.2.0`
+- optional FFmpeg re-encode actions are allowed in `VDM_v1.1`
 - re-encode must remain a separate, explicitly triggered helper action rather than becoming the core default pipeline
 
 ## Quick start
@@ -79,12 +75,9 @@ python -m pip install -r requirements.txt
 Run validation helpers:
 
 ```bat
-scripts
-un_pretest_checks.bat
-scripts
-un_regression_suite.bat
-scripts
-un_multisite_validation.bat
+scriptsun_pretest_checks.bat
+scriptsun_regression_suite.bat
+scriptsun_multisite_validation.bat
 ```
 
 Start the application:
@@ -97,12 +90,9 @@ Do not launch the app with `app.py`.
 
 ## Recommended release order
 1. `scriptsootstrap_python_deps.bat`
-2. `scripts
-un_pretest_checks.bat`
-3. `scripts
-un_regression_suite.bat`
-4. `scripts
-un_multisite_validation.bat`
+2. `scriptsun_pretest_checks.bat`
+3. `scriptsun_regression_suite.bat`
+4. `scriptsun_multisite_validation.bat`
 5. `python .\main.py`
 6. Build your portable folder with your normal PyInstaller flow / `VDM.spec`
 7. `scripts\clean_runtime_artifacts.bat`
@@ -111,7 +101,7 @@ un_multisite_validation.bat`
 10. `scripts\collect_support_bundle.bat <portable_folder>` when you need a support handoff archive
 
 ## Release-candidate closure focus
-This package opens the `VDM_v1.2.0` line for GitHub-ready cleanup and release preparation with:
+This package does not add new product scope. It closes the `VDM_v1.1` line with:
 - docs consistency pass
 - known limitations documented honestly
 - release checklist consolidation
@@ -146,10 +136,3 @@ scripts\collect_support_bundle.bat "."
 
 ## Warning
 This project depends on third-party tools and extractor behavior that can change without notice. Keep `yt-dlp` current and validate protected or cookie-backed sites on the target machine.
-
-
-## GitHub readiness in Package 1.0
-- repository metadata aligned for the `VDM_v1.2.0` line
-- issue and pull-request templates added under `.github/`
-- docs clarified for public repository use
-- no new download-engine scope was introduced in this package

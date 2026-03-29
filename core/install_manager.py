@@ -73,7 +73,7 @@ class InstallManager:
                         return True, "\n\n".join(outputs)
                 return False, "\n\n".join(outputs)
 
-            outputs.append("winget bulunamadi. Deno icin onerilen komut: irm https://deno.land/install.ps1 | iex")
+            outputs.append("winget was not found. Recommended Deno command: irm https://deno.land/install.ps1 | iex")
             return False, "\n\n".join(outputs)
 
         if lowered == "ffmpeg":
@@ -88,9 +88,9 @@ class InstallManager:
                     if ok:
                         return True, "\n\n".join(outputs)
                 return False, "\n\n".join(outputs)
-            return False, "winget bulunamadi. ffmpeg icin portable paket veya manuel kurulum gerekli."
+            return False, "winget was not found. ffmpeg requires a portable package or manual installation."
 
-        return False, f"Bilinmeyen bagimlilik: {dependency_name}"
+        return False, f"Unknown dependency: {dependency_name}"
 
     def post_install_path_fix(self, dependency_name: str) -> tuple[bool, str]:
         return self.path_manager.ensure_dependency_paths(dependency_name)
