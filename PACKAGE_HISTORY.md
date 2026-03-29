@@ -4,10 +4,32 @@ This file is the consolidated package index for the active `VDM_v1.3.0` line and
 
 ## Current product line rules
 - `VDM_v1.3.0` is the active product version.
-- Package numbers in the active line are tracked as `1.0`, `1.1`, `1.2`, `1.3`, and so on.
+- Package numbers in the active line are tracked as `1.0`, `1.1`, `1.2`, `1.3`, `1.4`, `1.5`, `1.6`, `1.7`, and `1.8`.
 - Every package that changes runtime behavior must also update the main documentation identity (`README.md`, `CHANGELOG.md`, `PACKAGE_HISTORY.md`, relevant package notes, and version-facing docs/settings where applicable).
 
 ## Active line: VDM_v1.3.0
+
+### Package 1.8
+- fixed portable bundle verification timing/strictness for runtime `data/settings.json` and `data/history.json`
+- accepted either app-root runtime data or bundled seed data during build-time verification so the first EXE launch no longer causes a false failure
+- kept package documentation synchronized with the active EXE validation line
+
+### Package 1.7
+- fixed the portable bundle verification rule so writable `data/settings.json` and `data/history.json` are checked under the app-root `data` folder
+- added the bundled app icon and connected it to both the EXE build and runtime window icon setup
+- kept documentation identity synchronized with the active package
+
+### Package 1.6
+- fixed EXE dependency check false errors caused by subprocess helper argument collisions
+- aligned portable bundle verification with the PyInstaller `onedir` layout used by the build
+
+### Package 1.5
+- fixed frozen EXE resource-path separation between bundled resources and writable runtime folders
+- removed visible startup console flashes from background tool checks
+
+### Package 1.4
+- portable EXE build foundation prepared
+- build contract, runtime-root contract, and bundle verification scripts added
 
 ### Package 1.3
 - documentation and version identity sync

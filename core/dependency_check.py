@@ -4,6 +4,7 @@ import subprocess
 from models.dependency_status import DependencyStatus
 from models.app_settings import AppSettings
 from core.path_manager import PathManager
+from core.subprocess_utils import hidden_subprocess_kwargs
 from core.version_check import VersionCheck
 
 
@@ -89,6 +90,7 @@ class DependencyChecker:
                 text=True,
                 timeout=8,
                 env=self.path_manager.build_runtime_env(),
+                **hidden_subprocess_kwargs(),
             )
             output = "\n".join([result.stdout or "", result.stderr or ""]).strip()
             if result.returncode != 0:

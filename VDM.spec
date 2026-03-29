@@ -1,18 +1,40 @@
 # -*- mode: python ; coding: utf-8 -*-
+from pathlib import Path
 from PyInstaller.utils.hooks import collect_submodules
 
-hiddenimports = collect_submodules('yt_dlp')
+ROOT = Path.cwd()
+hiddenimports = collect_submodules("yt_dlp")
+
+
+def collect_tree(folder_name: str):
+    folder = ROOT / folder_name
+    datas = []
+    if not folder.exists():
+        return datas
+    for path in folder.rglob("*"):
+        if path.is_file():
+            relative_parent = path.relative_to(ROOT).parent
+            datas.append((str(path), str(relative_parent)))
+    return datas
+
+
+datas = [
+    (str(ROOT / "LICENSE"), "."),
+    (str(ROOT / "README.md"), "."),
+    (str(ROOT / "CHANGELOG.md"), "."),
+    (str(ROOT / "PACKAGE_HISTORY.md"), "."),
+]
+
+datas += collect_tree("data")
+datas += collect_tree("docs")
+datas += collect_tree("locales")
+datas += collect_tree("assets")
 
 a = Analysis(
-    ['main.py'],
-    pathex=[],
+    [str(ROOT / "main.py")],
+    pathex=[str(ROOT)],
     binaries=[],
-    datas=[
-        ('data/settings.json', 'data'),
-        ('data/history.json', 'data'),
-        ('LICENSE', '.'),
-        ('README.md', '.'),
-    ],
+    datas=datas,
     hiddenimports=hiddenimports,
     hookspath=[],
     hooksconfig={},
@@ -26,12 +48,13 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name='VDM',
+    name="VDM",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
     upx=False,
     console=False,
+    icon=str(ROOT / "assets" / "app_icon.ico"),
 )
 coll = COLLECT(
     exe,
@@ -40,5 +63,5 @@ coll = COLLECT(
     strip=False,
     upx=False,
     upx_exclude=[],
-    name='VDM',
+    name="VDM",
 )

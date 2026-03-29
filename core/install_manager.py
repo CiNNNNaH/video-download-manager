@@ -3,6 +3,7 @@ import subprocess
 import sys
 
 from core.path_manager import PathManager
+from core.subprocess_utils import hidden_subprocess_kwargs
 
 
 class InstallManager:
@@ -18,6 +19,7 @@ class InstallManager:
                 timeout=timeout,
                 env=self.path_manager.build_runtime_env(),
                 shell=False,
+                **hidden_subprocess_kwargs(),
             )
             output = "\n".join([result.stdout.strip(), result.stderr.strip()]).strip()
             command_text = subprocess.list2cmdline(command)

@@ -1,5 +1,4 @@
-from pathlib import Path
-
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication
 
 from core.analyzer import Analyzer
@@ -9,6 +8,7 @@ from core.downloader import Downloader
 from core.environment import EnvironmentPaths
 from core.install_manager import InstallManager
 from core.path_manager import PathManager
+from core.runtime_context import get_runtime_context
 from gui.main_window import MainWindow
 from services.history_service import HistoryService
 from services.i18n_service import I18nService
@@ -19,8 +19,11 @@ from services.theme_service import ThemeService
 
 class VDMApplication:
     def __init__(self):
-        self.root = Path(__file__).resolve().parent
-        self.env_paths = EnvironmentPaths(self.root)
+        self.runtime_context = get_runtime_context()
+        self.root = self.runtime_context.app_root
+        self.bundle_root = self.runtime_context.bundle_root
+        self.env_paths = EnvironmentPaths(self.root, self.bundle_root)
+        self.env_paths.ensure_runtime_dirs()
 
         self.settings_service = SettingsService(self.env_paths.data_dir / "settings.json")
         self.settings = self.settings_service.load()
@@ -28,14 +31,22 @@ class VDMApplication:
         self.history = self.history_service.load()
 
         self.log_service = LogService(self.root / "log.txt", self.env_paths.logs_dir / "app.log")
-        self.i18n = I18nService(self.root / "locales", self.settings.language)
-        self.log_service.start_session(self.settings, self.root, self.env_paths)
+        self.i18n = I18nService(self.env_paths.locales_dir, self.settings.language)
+        self.log_service.start_session(self.settings, self.root, self.env_paths, bundle_root=self.bundle_root)
         self.log_service.trace_paths(
             "application",
             root=self.root,
             data_dir=self.env_paths.data_dir,
             logs_dir=self.env_paths.logs_dir,
             tools_dir=self.env_paths.tools_dir,
+            bundle_root=self.bundle_root,
+            locales_dir=self.env_paths.locales_dir,
+            locales_exists=self.env_paths.locales_dir.exists(),
+            en_json_exists=(self.env_paths.locales_dir / "en.json").exists(),
+            tr_json_exists=(self.env_paths.locales_dir / "tr.json").exists(),
+            assets_dir=self.env_paths.assets_dir,
+            app_icon_png_exists=self.env_paths.app_icon_png.exists(),
+            app_icon_ico_exists=self.env_paths.app_icon_ico.exists(),
         )
         self.log_service.trace_settings_snapshot(self.settings)
         self.theme_service = ThemeService()
@@ -50,6 +61,11 @@ class VDMApplication:
         self.log_service.trace_step("application", "run.enter")
         app = QApplication([])
         self.log_service.trace_step("application", "qapplication.created")
+        if self.env_paths.app_icon_png.exists():
+            app.setWindowIcon(QIcon(str(self.env_paths.app_icon_png)))
+            self.log_service.trace_step("application", "icon.applied", icon=str(self.env_paths.app_icon_png))
+        else:
+            self.log_service.trace_step("application", "icon.missing", icon=str(self.env_paths.app_icon_png))
         self.theme_service.apply_theme(app, self.settings.theme)
         self.log_service.trace_step("application", "theme.applied", theme=self.settings.theme)
 
@@ -69,6 +85,8 @@ class VDMApplication:
                 app=app,
                 i18n=self.i18n,
             )
+            if self.env_paths.app_icon_png.exists():
+                window.setWindowIcon(QIcon(str(self.env_paths.app_icon_png)))
             self.log_service.trace_step("application", "mainwindow.created")
             window.show()
             self.log_service.trace_step("application", "mainwindow.shown")

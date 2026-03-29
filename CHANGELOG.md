@@ -2,6 +2,31 @@
 
 This file tracks user-facing product changes for the active **VDM_v1.3.0** line, while preserving the older `VDM_v1.1` recovery and closure history below.
 
+## VDM_v1.3.0 / Package 1.8 - Portable EXE Verify Timing and Strictness Fix
+- updated portable bundle verification so `data/settings.json` and `data/history.json` may be validated from either app-root runtime data or bundled seed data
+- removed false build failures caused by checking writable runtime data before the first EXE launch populated the app-root `data` folder
+- kept package documentation synchronized with the active EXE validation line
+
+## VDM_v1.3.0 / Package 1.7 - Portable EXE Verify Root Contract Fix and Icon Integration
+- corrected the portable bundle verification contract so `data/settings.json` and `data/history.json` are validated in the writable app-root `data` folder instead of `_internal/data`
+- added bundled application icon assets and wired them into the PyInstaller build and runtime window icon setup
+- synchronized documentation identity for the active package after the EXE validation fixes
+
+## VDM_v1.3.0 / Package 1.6 - Portable EXE Dependency Check and Verify Fix
+- fixed EXE dependency check false errors caused by subprocess helper argument collisions
+- aligned portable bundle verification with the PyInstaller `onedir` layout used by the build
+
+## VDM_v1.3.0 / Package 1.5 - Portable EXE Resource Path and Console Suppression Fix
+- separated bundled resource paths from writable app-root paths in frozen EXE runs
+- fixed locale loading for the EXE build so translated UI text resolves correctly
+- suppressed visible startup console flashes from hidden tool/version checks on Windows
+
+## VDM_v1.3.0 / Package 1.4 - Portable EXE Build Foundation
+- prepared the `PyInstaller onedir` build contract for the active `VDM_v1.3.0` line
+- added frozen/source-aware runtime root handling for future EXE runs
+- expanded build assets to include docs, data, and locale resources
+- added portable build and verification scripts for the future EXE workflow
+
 ## VDM_v1.3.0 / Package 1.3 - Documentation and Version Identity Sync
 - synchronized `README.md`, `CHANGELOG.md`, and `PACKAGE_HISTORY.md` with the active `VDM_v1.3.0` line
 - corrected product/package identity drift left behind during rapid stabilization work

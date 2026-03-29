@@ -13,3 +13,6 @@ coverage.xml
 htmlcov/
 logs/*.log
 data/cache/
+*.zip
+log.txt
+*.pyc

@@ -74,7 +74,7 @@ class LogService:
             out[key] = value
         return out
 
-    def start_session(self, settings=None, root_path: Path | None = None, env_paths=None) -> None:
+    def start_session(self, settings=None, root_path: Path | None = None, env_paths=None, bundle_root: Path | None = None) -> None:
         settings_map = self._normalize_settings(settings)
         summary = {
             "session_id": self.session_id,
@@ -84,6 +84,7 @@ class LogService:
             "executable": sys.executable,
             "frozen": bool(getattr(sys, "frozen", False)),
             "root": str(root_path) if root_path else "",
+            "bundle_root": str(bundle_root) if bundle_root else "",
             "tools_dir": str(getattr(env_paths, "tools_dir", "")) if env_paths else "",
             "logs_dir": str(getattr(env_paths, "logs_dir", "")) if env_paths else "",
             "settings": {

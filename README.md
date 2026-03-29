@@ -3,12 +3,12 @@
 Video Download Manager (VDM) is a portable-first Windows desktop downloader built around `yt-dlp` with a PySide6 GUI.
 
 - **Product Version:** `VDM_v1.3.0`
-- **Current Delivery Package:** `1.3`
+- **Current Delivery Package:** `1.8`
 
 ## Versioning model
 VDM uses two parallel identifiers:
 - **Product version**: the active product line, currently `VDM_v1.3.0`
-- **Package version**: delivery iterations inside the same product line, for example `1.0`, `1.1`, `1.2`, `1.3`
+- **Package version**: delivery iterations inside the same product line, for example `1.0`, `1.1`, `1.2`, `1.3`, `1.4`, `1.5`, `1.6`, `1.7`, `1.8`
 
 Integer package numbers are normalized in documentation as `.0` only when required by older history entries. The active `VDM_v1.3.0` line uses the simple `1.x` package sequence.
 
@@ -29,6 +29,11 @@ Integer package numbers are normalized in documentation as `.0` only when requir
 - Advanced view enabled by default
 - session log hardened from startup to shutdown
 - cancelled/failed download temp-file cleanup enabled
+- portable EXE `onedir` build foundation prepared
+- portable EXE app icon integrated for window and executable branding
+- portable EXE resource/verify contract aligned for app-root data and bundled resources
+- portable EXE resource path, console suppression, dependency check, and verify fixes validated
+- portable EXE verify timing/strictness aligned so first-build checks do not fail before app-root runtime data is created
 
 ## Known limits
 - site behavior can still change without notice
@@ -85,9 +90,12 @@ python -m pip install -r requirements.txt
 Run validation helpers:
 
 ```bat
-scriptsun_pretest_checks.bat
-scriptsun_regression_suite.bat
-scriptsun_multisite_validation.bat
+scripts
+un_pretest_checks.bat
+scripts
+un_regression_suite.bat
+scripts
+un_multisite_validation.bat
 ```
 
 Start the application:
