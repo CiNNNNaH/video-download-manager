@@ -1,10 +1,29 @@
 # Changelog
 
-This file tracks user-facing product changes within the **VDM_v1.1** product line.
+This file tracks user-facing product changes for the active **VDM_v1.3.0** line, while preserving the older `VDM_v1.1` recovery and closure history below.
 
-- **Product version** stays at `VDM_v1.1` until a true product-level milestone justifies `v1.2`.
-- **Package numbers** are delivery iterations inside the same product line.
-- Integer package numbers are normalized in documentation as `.0` for readability and sorting.
+## VDM_v1.3.0 / Package 1.3 - Documentation and Version Identity Sync
+- synchronized `README.md`, `CHANGELOG.md`, and `PACKAGE_HISTORY.md` with the active `VDM_v1.3.0` line
+- corrected product/package identity drift left behind during rapid stabilization work
+- formalized the rule that package-level runtime changes must update documentation alongside code
+
+## VDM_v1.3.0 / Package 1.2 - Cancel and Failure Temp File Cleanup
+- cleaned up partial `.part`/temporary files after cancelled or failed downloads
+- kept only completed download outputs in the target folder
+
+## VDM_v1.3.0 / Package 1.1 - Download Fallback, Stop Control, and Logging Unification
+- switched the default browser path to Firefox-first for cookie-backed flows
+- unified logging expectations between `app.log` and `log.txt`
+- improved stop-flow honesty and fallback tracing for downloads
+
+## VDM_v1.3.0 / Package 1.0 - Logging Hardening Foundation
+- introduced hardened session logging from startup to shutdown
+- added richer structured trace events for startup, analyze, and download flows
+- established current-run-only session log behavior
+
+---
+
+The older `VDM_v1.1` history is retained below for continuity.
 
 ## VDM_v1.1 / Package 19.0 - Release Candidate Closure Pack
 - consolidated release-candidate guidance and final release closure notes

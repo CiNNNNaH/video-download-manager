@@ -2,24 +2,33 @@
 
 Video Download Manager (VDM) is a portable-first Windows desktop downloader built around `yt-dlp` with a PySide6 GUI.
 
-- **Product Version:** `VDM_v1.1`
-- **Current Delivery Package:** `19.0`
+- **Product Version:** `VDM_v1.3.0`
+- **Current Delivery Package:** `1.3`
 
 ## Versioning model
 VDM uses two parallel identifiers:
-- **Product version**: the main product line, currently `VDM_v1.1`
-- **Package version**: delivery iterations inside the same product line, for example `15R.2`, `16.0`, `17.2`, `19.0`
+- **Product version**: the active product line, currently `VDM_v1.3.0`
+- **Package version**: delivery iterations inside the same product line, for example `1.0`, `1.1`, `1.2`, `1.3`
 
-Integer package numbers are normalized in documentation as `.0` for readability and sorting.
+Integer package numbers are normalized in documentation as `.0` only when required by older history entries. The active `VDM_v1.3.0` line uses the simple `1.x` package sequence.
 
 ## What this build is expected to do
 - detect Python and external-tool readiness
 - analyze supported URLs through `yt-dlp`
-- list formats in a user-friendly table
+- list formats in Simple and Advanced views
 - download video+audio, video-only, and audio-only targets
 - stop an in-progress download without freezing the UI
-- remember the user's key GUI selections across restarts
-- export debug information for troubleshooting
+- remove temporary partial files after user-cancelled or failed downloads
+- remember key GUI selections across restarts
+- export session logging from startup to shutdown for troubleshooting
+
+## Current line highlights
+- English-first UI with Turkish language pack support
+- Firefox-first browser-cookie handling with fallback enabled
+- corrected Selected Format panel layout
+- Advanced view enabled by default
+- session log hardened from startup to shutdown
+- cancelled/failed download temp-file cleanup enabled
 
 ## Known limits
 - site behavior can still change without notice
@@ -27,6 +36,7 @@ Integer package numbers are normalized in documentation as `.0` for readability 
 - protected or age-gated content may still fail depending on browser/session state
 - Instagram and similar sites may fail because of account/session/content restrictions even when the app itself is behaving correctly
 - cookie-backed flows are environment-sensitive on Windows because browser database access and DPAPI behavior are not equally reliable across browsers
+- some downloads may still depend on site-specific behavior even when analyze succeeds
 
 ## Requirements and supported tools
 
@@ -41,15 +51,15 @@ Integer package numbers are normalized in documentation as `.0` for readability 
 
 ### Optional or environment-dependent tools
 - **winget** for some install/update flows on Windows
-- **Node.js** only if a specific helper or local environment script still depends on it
 - local `tools/` copies of external binaries if you prefer portable bundling over system PATH
 
 ### Browser integration
 Supported browser-cookie integrations:
+- Firefox
 - Chrome
 - Brave
-- Firefox
 - Edge
+- cookies disabled
 
 These are not all hard dependencies for every scenario, but they matter for cookie-backed or protected content.
 
@@ -58,12 +68,12 @@ Current tested behavior in this project line:
 - **Firefox** is the most reliable cookie-backed path in tested environments.
 - **Edge** may work depending on local profile and DPAPI state.
 - **Chrome** and **Brave** may fail in some Windows environments because of cookie-database access or DPAPI decryption issues.
-- For cookie-backed flows, keep browser fallback enabled and treat **Firefox** as the preferred recovery path.
+- Keep browser fallback enabled and treat **Firefox** as the preferred recovery path.
 
 ## Media processing scope
 - normal downloads may use remux when required
-- optional FFmpeg re-encode actions are allowed in `VDM_v1.1`
-- re-encode must remain a separate, explicitly triggered helper action rather than becoming the core default pipeline
+- optional FFmpeg re-encode actions are allowed in `VDM_v1.3.0`
+- re-encode remains a separate, explicitly triggered helper action rather than the core default pipeline
 
 ## Quick start
 Install Python dependencies:
@@ -89,50 +99,28 @@ python main.py
 Do not launch the app with `app.py`.
 
 ## Recommended release order
-1. `scriptsootstrap_python_deps.bat`
-2. `scriptsun_pretest_checks.bat`
-3. `scriptsun_regression_suite.bat`
-4. `scriptsun_multisite_validation.bat`
+1. `scripts\bootstrap_python_deps.bat`
+2. `scripts\run_pretest_checks.bat`
+3. `scripts\run_regression_suite.bat`
+4. `scripts\run_multisite_validation.bat`
 5. `python .\main.py`
-6. Build your portable folder with your normal PyInstaller flow / `VDM.spec`
+6. Build the portable folder with the normal PyInstaller flow / `VDM.spec`
 7. `scripts\clean_runtime_artifacts.bat`
-8. `scriptserify_portable_bundle.bat <portable_folder>`
+8. `scripts\verify_portable_bundle.bat <portable_folder>`
 9. `scripts\package_release_bundle.bat <portable_folder>`
-10. `scripts\collect_support_bundle.bat <portable_folder>` when you need a support handoff archive
+10. `scripts\collect_support_bundle.bat <portable_folder>` when a support handoff archive is needed
 
-## Release-candidate closure focus
-This package does not add new product scope. It closes the `VDM_v1.1` line with:
-- docs consistency pass
-- known limitations documented honestly
-- release checklist consolidation
-- packaging and support-bundle workflows already validated in previous packages
-
-## Support bundle
-Use this when you need to send a compact troubleshooting package:
-
-```bat
-scripts\collect_support_bundle.bat "."
-```
+## Documentation update rule
+Every package that changes runtime behavior must also update:
+- `README.md`
+- `CHANGELOG.md`
+- `PACKAGE_HISTORY.md`
+- package note file(s)
+- any version identifiers in settings or runtime-facing docs that changed with the package
 
 ## Important docs
-- `docs\FINAL_RELEASE_CHECKLIST.md`
+- `docs\SESSION_LOGGING_CONTRACT.md`
+- `docs\CURRENT_BEHAVIOR_CONTRACT.md`
+- `docs\LOCALIZATION_CLOSURE_PRE_EXE_GATE.md`
+- `docs\PACKAGE_1_5_RUNTIME_GATE.md`
 - `docs\RELEASE_CANDIDATE_CLOSURE.md`
-- `docs\MULTI_SITE_VALIDATION_MATRIX.md`
-- `docs\OPERATIONAL_HARDENING.md`
-- `docs\TROUBLESHOOTING.md`
-- `PACKAGE_HISTORY.md`
-- `CHANGELOG.md`
-
-## Project layout
-- `core/` business logic
-- `gui/` desktop interface
-- `services/` settings, logging, theme
-- `models/` typed data models
-- `data/` settings and history
-- `logs/` detailed logs
-- `tests/` sanity and regression checks
-- `scripts/` helper, build, packaging, and support-bundle scripts
-- `docs/` validation, release, and usage notes
-
-## Warning
-This project depends on third-party tools and extractor behavior that can change without notice. Keep `yt-dlp` current and validate protected or cookie-backed sites on the target machine.
