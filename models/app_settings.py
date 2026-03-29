@@ -4,10 +4,10 @@ from dataclasses import dataclass, field
 @dataclass
 class AppSettings:
     app_name: str = "Video Download Manager"
-    version: str = "VDM_v1.2.0"
+    version: str = "VDM_v1.3.0"
     theme: str = "system"  # light, dark, system
     language: str = "en"
-    default_browser: str = "chrome"
+    default_browser: str = "firefox"
     fallback_browsers: bool = True
     default_download_dir: str = ""
     default_view_mode: str = "advanced"  # simple, advanced

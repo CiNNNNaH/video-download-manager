@@ -131,6 +131,7 @@ class MainWindow(QMainWindow):
         self.current_view_mode = self.settings.default_view_mode
         self.current_formats = []
         self.last_completed_path = ""
+        self.download_has_started = False
         self.analysis_thread: QThread | None = None
         self.analysis_worker: AnalyzeWorker | None = None
         self.analysis_active = False
@@ -858,6 +859,7 @@ class MainWindow(QMainWindow):
         self.current_result = None
         self.current_formats = []
         self.last_completed_path = ""
+        self.download_has_started = False
         self.open_file_button.setEnabled(False)
         self.reencode_button.setEnabled(False)
         self.progress_bar.setValue(0)
@@ -1027,6 +1029,7 @@ class MainWindow(QMainWindow):
         self.current_result = result
         self.current_formats = []
         self.last_completed_path = ""
+        self.download_has_started = False
         self.open_file_button.setEnabled(False)
         self.reencode_button.setEnabled(False)
         self.history["last_browser"] = selected_browser
@@ -1263,6 +1266,7 @@ class MainWindow(QMainWindow):
             self.show_error("The download engine is busy.")
             return
 
+        self.download_has_started = False
         self.progress_bar.setValue(0)
         self.progress_details.setText(self.t("main.preparing_progress"))
         self.download_button.setEnabled(False)
@@ -1272,8 +1276,8 @@ class MainWindow(QMainWindow):
         self.log_service.info(
             f"Download request received | url={request.url} | format={selected_item.format_id} | ext={selected_item.ext} | media_type={selected_item.media_type} | mode={media_mode} | target_container={target_container} | remux={request.remux_enabled} | browser={request.browser} | fallback={request.fallback_browsers}"
         )
-        self.statusBar().showMessage(self.t("main.download_started"))
-        self._append_log(f"Download started | site_family={site_family} | format={selected_item.format_id} | mode={media_mode} | browser={request.browser} | fallback={request.fallback_browsers}")
+        self.statusBar().showMessage(self.t("main.preparing_progress"))
+        self._append_log(f"Download queued | site_family={site_family} | format={selected_item.format_id} | mode={media_mode} | browser={request.browser} | fallback={request.fallback_browsers}")
         self._trace("start_download.exit", started=started)
 
     def _stop_download(self):
@@ -1281,11 +1285,17 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage(self.t("main.no_active_download_to_stop"))
             return
         self.downloader.stop()
+        self.stop_button.setEnabled(False)
+        self.progress_details.setText("Stop requested. Waiting for the active browser/download call to return.")
         self.statusBar().showMessage(self.t("main.stop_requested"))
         self._append_log(self.t("main.user_requested_stop"))
         self._trace("stop_download")
 
     def _on_download_progress(self, status):
+        if status.status == "downloading" and not self.download_has_started:
+            self.download_has_started = True
+            self.statusBar().showMessage(self.t("main.download_started"))
+            self._append_log("Download started | backend transfer confirmed")
         self.progress_bar.setValue(int(status.percent))
         self.progress_details.setText(
             f"%{status.percent:.1f} | Speed: {status.speed_text} | Remaining: {status.eta_text} | "
@@ -1295,6 +1305,7 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage(self.t("main.active_file", name=Path(status.filename).name))
 
     def _on_download_completed(self, status):
+        self.download_has_started = False
         self.progress_bar.setValue(100)
         self.progress_details.setText(self.t("main.download_done_progress"))
         self.download_button.setEnabled(True)
@@ -1309,6 +1320,7 @@ class MainWindow(QMainWindow):
         self._trace("download_completed", path=self.last_completed_path or "")
 
     def _on_download_error(self, message: str):
+        self.download_has_started = False
         self.stop_button.setEnabled(False)
         self.download_button.setEnabled(bool(self.current_formats))
         self._update_filename_preview()

@@ -26,9 +26,10 @@ class AnalyzeResult:
 
 
 class Analyzer:
-    def __init__(self, settings, path_manager: PathManager):
+    def __init__(self, settings, path_manager: PathManager, log_service=None):
         self.settings = settings
         self.path_manager = path_manager
+        self.log_service = log_service
 
     @staticmethod
     def _format_duration(seconds: int | None) -> str:
@@ -48,11 +49,6 @@ class Analyzer:
             "windowsfilenames": False,
             "ignoreerrors": False,
         }
-        # VDM 9.2 hotfix:
-        # Do not inject js_runtimes here.
-        # The previous shape triggered yt-dlp ValueError on public analysis flows
-        # (expected dict of {runtime: [config]}). Public links should analyze without
-        # any browser runtime customization.
         return opts
 
     def _build_content(self, info: dict, original_url: str) -> ContentInfo:
@@ -86,24 +82,64 @@ class Analyzer:
 
     def analyze(self, url: str, browser: str, fallback_browsers: bool = False) -> AnalyzeResult:
         normalized = UrlUtils.normalize_url(url)
+        if self.log_service:
+            self.log_service.trace_step(
+                "analyzer",
+                "analyze.enter",
+                url=url,
+                normalized_url=normalized,
+                browser=browser,
+                fallback_browsers=fallback_browsers,
+            )
         if not UrlUtils.is_valid_url(normalized):
+            if self.log_service:
+                self.log_service.trace_step("analyzer", "analyze.invalid_url", normalized_url=normalized)
             return AnalyzeResult(ok=False, message="Invalid URL", technical_details="The URL is not in http/https format.")
 
         candidates = BrowserCookies.resolve_candidates(browser, fallback_browsers)
         if not candidates:
             candidates = BrowserCookies.resolve_candidates("cookies_disabled", False)
+        if self.log_service:
+            self.log_service.trace_response(
+                "analyzer.candidates",
+                response=[candidate.label for candidate in candidates],
+                count=len(candidates),
+            )
 
         errors: list[str] = []
         for candidate in candidates:
             opts = self._base_opts()
             if candidate.yt_dlp_name:
                 opts["cookiesfrombrowser"] = (candidate.yt_dlp_name,)
+            if self.log_service:
+                sanitized_opts = dict(opts)
+                if "cookiesfrombrowser" in sanitized_opts:
+                    sanitized_opts["cookiesfrombrowser"] = [candidate.label]
+                self.log_service.trace_response(
+                    "analyzer.attempt",
+                    response=sanitized_opts,
+                    cookie_source=candidate.label,
+                )
             try:
                 with YoutubeDL(opts) as ydl:
                     info = ydl.extract_info(normalized, download=False)
                 content = self._build_content(info, normalized)
-                advanced = FormatProcessor.build_advanced_items(info.get("formats") or [])
+                raw_formats = info.get("formats") or []
+                advanced = FormatProcessor.build_advanced_items(raw_formats)
                 simple = FormatProcessor.build_simple_items(advanced)
+                if self.log_service:
+                    self.log_service.trace_response(
+                        "analyzer.result",
+                        response={
+                            "title": content.title,
+                            "extractor": content.extractor,
+                            "site": content.site,
+                            "used_browser": candidate.label,
+                        },
+                        raw_format_count=len(raw_formats),
+                        advanced_format_count=len(advanced),
+                        simple_format_count=len(simple),
+                    )
                 return AnalyzeResult(
                     ok=True,
                     content=content,
@@ -114,13 +150,26 @@ class Analyzer:
                 )
             except DownloadError as exc:
                 errors.append(f"{candidate.label}: {exc}")
+                if self.log_service:
+                    self.log_service.trace_exception("analyzer.download_error", exc, cookie_source=candidate.label)
             except Exception as exc:
                 errors.append(f"{candidate.label}: {type(exc).__name__}: {exc}")
+                if self.log_service:
+                    self.log_service.trace_exception("analyzer.unhandled_error", exc, cookie_source=candidate.label)
 
         app_error = ErrorHandler.classify_analyze_error(
             message="Analysis failed.",
             detail=" | ".join(errors[:4]),
         )
+        if self.log_service:
+            self.log_service.trace_response(
+                "analyzer.failure",
+                response={
+                    "used_browser_candidates": [c.label for c in candidates],
+                    "error_count": len(errors),
+                    "message": app_error.message,
+                },
+            )
         return AnalyzeResult(
             ok=False,
             used_browser=", ".join(c.label for c in candidates),

@@ -1,8 +1,8 @@
 {
   "app_name": "Video Download Manager",
-  "version": "VDM_v1.2.0",
+  "version": "VDM_v1.3.0",
   "theme": "system",
-  "default_browser": "chrome",
+  "default_browser": "firefox",
   "fallback_browsers": true,
   "default_download_dir": "",
   "default_view_mode": "advanced",

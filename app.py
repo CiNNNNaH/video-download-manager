@@ -11,8 +11,8 @@ from core.install_manager import InstallManager
 from core.path_manager import PathManager
 from gui.main_window import MainWindow
 from services.history_service import HistoryService
-from services.log_service import LogService
 from services.i18n_service import I18nService
+from services.log_service import LogService
 from services.settings_service import SettingsService
 from services.theme_service import ThemeService
 
@@ -30,17 +30,28 @@ class VDMApplication:
         self.log_service = LogService(self.root / "log.txt", self.env_paths.logs_dir / "app.log")
         self.i18n = I18nService(self.root / "locales", self.settings.language)
         self.log_service.start_session(self.settings, self.root, self.env_paths)
+        self.log_service.trace_paths(
+            "application",
+            root=self.root,
+            data_dir=self.env_paths.data_dir,
+            logs_dir=self.env_paths.logs_dir,
+            tools_dir=self.env_paths.tools_dir,
+        )
+        self.log_service.trace_settings_snapshot(self.settings)
         self.theme_service = ThemeService()
         self.path_manager = PathManager(self.env_paths, self.settings)
         self.dependency_checker = DependencyChecker(self.settings, self.path_manager)
         self.install_manager = InstallManager(self.path_manager)
         self.bootstrap_manager = BootstrapManager(self.dependency_checker, self.install_manager)
-        self.analyzer = Analyzer(self.settings, self.path_manager)
-        self.downloader = Downloader(self.settings, self.path_manager)
+        self.analyzer = Analyzer(self.settings, self.path_manager, self.log_service)
+        self.downloader = Downloader(self.settings, self.path_manager, self.log_service)
 
     def run(self) -> int:
+        self.log_service.trace_step("application", "run.enter")
         app = QApplication([])
+        self.log_service.trace_step("application", "qapplication.created")
         self.theme_service.apply_theme(app, self.settings.theme)
+        self.log_service.trace_step("application", "theme.applied", theme=self.settings.theme)
 
         try:
             window = MainWindow(
@@ -58,12 +69,24 @@ class VDMApplication:
                 app=app,
                 i18n=self.i18n,
             )
+            self.log_service.trace_step("application", "mainwindow.created")
             window.show()
+            self.log_service.trace_step("application", "mainwindow.shown")
 
             exit_code = app.exec()
+            self.log_service.trace_step("application", "qapplication.exec.exit", exit_code=exit_code)
             self.settings_service.save(self.settings)
             self.history_service.save(self.history)
+            self.log_service.trace_step(
+                "application",
+                "state.saved",
+                settings_path=str(self.env_paths.data_dir / "settings.json"),
+                history_path=str(self.env_paths.data_dir / "history.json"),
+            )
             self.log_service.info(f"VDM session closing | exit_code={exit_code}")
             return exit_code
+        except Exception as exc:
+            self.log_service.trace_exception("application.run", exc)
+            raise
         finally:
             self.log_service.close()

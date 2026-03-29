@@ -21,10 +21,14 @@ class SettingsService:
 
     def _migrate_legacy_settings(self, raw: dict) -> dict:
         migrated = dict(raw or {})
+        defaults = AppSettings()
         if not migrated.get("language"):
             migrated["language"] = "en"
         if migrated.get("default_browser") == "cookies kapali":
             migrated["default_browser"] = "cookies_disabled"
+        if not migrated.get("default_browser"):
+            migrated["default_browser"] = defaults.default_browser
+        migrated["version"] = defaults.version
         order = migrated.get("format_table_column_order") or []
         migrated["format_table_column_order"] = ["Choice" if item == "Secim" else item for item in order]
         widths = migrated.get("format_table_column_widths") or {}

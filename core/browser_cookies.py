@@ -19,7 +19,7 @@ class BrowserCookies:
         "cookies_disabled": BrowserCandidate("", "Cookies Disabled"),
     }
 
-    FALLBACK_ORDER = ["chrome", "edge", "brave", "firefox"]
+    FALLBACK_ORDER = ["firefox", "cookies_disabled", "chrome", "edge", "brave"]
 
     @classmethod
     def resolve_candidates(cls, selected: str, fallback_enabled: bool) -> List[BrowserCandidate]:
@@ -29,14 +29,21 @@ class BrowserCookies:
 
         candidates: list[BrowserCandidate] = []
         seen = set()
-        if selected in cls.NAME_MAP:
-            candidates.append(cls.NAME_MAP[selected])
-            seen.add(selected)
+
+        def add(name: str) -> None:
+            if name in cls.NAME_MAP and name not in seen:
+                candidates.append(cls.NAME_MAP[name])
+                seen.add(name)
 
         if fallback_enabled:
+            # Firefox is the primary cookie source because it is the most reliable
+            # path in the field. Chromium-family browsers remain secondary.
+            add("firefox")
+            if selected and selected != "firefox":
+                add(selected)
             for item in cls.FALLBACK_ORDER:
-                if item not in seen:
-                    candidates.append(cls.NAME_MAP[item])
-                    seen.add(item)
+                add(item)
+        else:
+            add(selected)
 
         return candidates
